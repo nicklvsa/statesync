@@ -6,7 +6,7 @@ import {
 } 
 from '@hookstate/core';
 
-import { SocketType, SocketEvent, ReceiveSyncEvent } from './types';
+import { SocketType, SocketEvent, ReceiveSyncEvent, HTTPType } from './types';
 
 class StateSyncClient {
     private endpoint!: string;
@@ -65,6 +65,21 @@ class StateSyncClient {
                 ...data,
             }
         });
+    }
+
+    public sendHTTP(httpType: HTTPType, data: object) {
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+
+        const payload = this.createSocketMessage(SocketType.SEND, {
+            http_over_websocket: true,
+            headers: headers,
+            body: data,
+        });
+
+        // TODO: figure out way to receive response from websocket stream directly after calling send
+        this.socket.send(payload);
     }
 
     public getServerState(): object {

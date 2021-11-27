@@ -16,3 +16,10 @@ export enum SocketType {
     SEND = 'SEND',
     RECEIVE = 'RECEIVE',
 }
+
+export enum HTTPType {
+    POST = 'POST',
+    PUT = 'PUT',
+    GET = 'GET',
+    DELETE = 'DELETE',
+}
