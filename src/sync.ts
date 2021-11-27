@@ -6,7 +6,12 @@ import {
 } 
 from '@hookstate/core';
 
-import { SocketType, SocketEvent, ReceiveSyncEvent, HTTPType } from './types';
+import { 
+    SocketType, 
+    SocketEvent, 
+    ReceiveSyncEvent, 
+    HTTPType 
+} from './types';
 
 class StateSyncClient {
     private endpoint!: string;
@@ -34,7 +39,7 @@ class StateSyncClient {
             const message: SocketEvent<ReceiveSyncEvent> = JSON.parse(evt.data ?? {});
             state.set({
 
-            })
+            });
 
             return null;
         })
@@ -58,7 +63,7 @@ class StateSyncClient {
         return this.getServerState();
     }
 
-    public createSocketMessage(msgType: SocketType, data: object): string {
+    private createSocketMessage(msgType: SocketType, data: object): string {
         return JSON.stringify({
             message_type: msgType,
             data: {
