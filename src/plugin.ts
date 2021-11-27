@@ -1,10 +1,14 @@
 import { 
-    Plugin, 
     StateValueAtRoot, 
     State, 
     PluginCallbacks, 
-    PluginCallbacksOnSetArgument } 
+    PluginCallbacksOnSetArgument,
+    PluginCallbacksOnDestroyArgument
+} 
 from '@hookstate/core';
+
+import { StateSyncPluginType } from './types';
+import StateSyncClient from './sync';
 
 /**
  * State Sync Plugin
@@ -18,15 +22,29 @@ from '@hookstate/core';
 
 const StateSyncPluginID = Symbol('StateSyncPlugin');
 
-export const StateSync = (): (() => Plugin) => {
+export const StateSync = (endpoint: string): StateSyncPluginType => {
+    if (!endpoint.startsWith('http://') || !endpoint.startsWith('https://')) {
+        return null;
+    }
+
     return () => ({
         id: StateSyncPluginID,
         init: (s: State<StateValueAtRoot>) => {
+            const builder = new StateSyncClient(endpoint);
+            const socket = builder.getSocket(s);
+
             return {
                 onSet: (data: PluginCallbacksOnSetArgument) => {
                     if ('state' in data) {
+                        const newValue = data.value;
+                        const previousValue = data.previous;
+
 
                     }
+                },
+                onDestroy: (data: PluginCallbacksOnDestroyArgument) => {
+                    socket.close();
+                    return null;
                 }
             } as PluginCallbacks;
         }
