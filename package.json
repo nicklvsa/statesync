@@ -4,6 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@hookstate/core": "^3.0.13"
+    "@hookstate/core": "^3.0.13",
+    "tslint": "^6.1.3"
   }
 }
