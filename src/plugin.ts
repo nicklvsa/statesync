@@ -35,12 +35,7 @@ export const StateSync = (endpoint: string): StateSyncPluginType => {
 
             return {
                 onSet: (data: PluginCallbacksOnSetArgument) => {
-                    if ('state' in data) {
-                        const newValue = data.value;
-                        const previousValue = data.previous;
-
-
-                    }
+                    builder.sendState(data);
                 },
                 onDestroy: (data: PluginCallbacksOnDestroyArgument) => {
                     socket.close();
