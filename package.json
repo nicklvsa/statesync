@@ -1,0 +1,9 @@
+{
+  "name": "statesync",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@hookstate/core": "^3.0.13"
+  }
+}
