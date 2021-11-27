@@ -1,4 +1,4 @@
-import { WebsocketBuilder, Websocket as ServiceSocket, WebsocketEvents } from 'websocket-ts';
+import { WebsocketBuilder, Websocket as ServiceSocket } from 'websocket-ts';
 import { 
     State,
     StateValueAtRoot,

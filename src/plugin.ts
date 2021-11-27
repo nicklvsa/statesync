@@ -23,7 +23,7 @@ import StateSyncClient from './sync';
 const StateSyncPluginID = Symbol('StateSyncPlugin');
 
 export const StateSync = (endpoint: string): StateSyncPluginType => {
-    if (!endpoint.startsWith('http://') || !endpoint.startsWith('https://')) {
+    if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
         return null;
     }
 
@@ -39,7 +39,6 @@ export const StateSync = (endpoint: string): StateSyncPluginType => {
                 },
                 onDestroy: (data: PluginCallbacksOnDestroyArgument) => {
                     socket.close();
-                    return null;
                 }
             } as PluginCallbacks;
         }
