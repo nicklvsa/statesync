@@ -1,4 +1,4 @@
-import { WebsocketBuilder, Websocket as ServiceSocket } from 'websocket-ts';
+import { WebsocketBuilder, Websocket as ServiceSocket, LRUBuffer, LinearBackoff } from 'websocket-ts';
 import { 
     State,
     StateValueAtRoot,
@@ -10,7 +10,8 @@ import {
     SocketType, 
     SocketEvent, 
     ReceiveSyncEvent, 
-    HTTPType 
+    HTTPType, 
+    MessageType
 } from './types';
 
 class StateSyncClient {
@@ -32,25 +33,27 @@ class StateSyncClient {
     }
 
     public setupSync(state: State<StateValueAtRoot>) {
-        const socket = this.builder.onOpen((instance: ServiceSocket, evt: Event) => {
-            return null;
-        })
-        .onMessage((instance: ServiceSocket, evt: MessageEvent) => {
-            const message: SocketEvent<ReceiveSyncEvent> = JSON.parse(evt.data ?? {});
-            state.set({
-
-            });
-
-            return null;
-        })
-        .onError((instance: ServiceSocket, evt: Event) => {
-            return null;
-        })
-        .onClose((instance: ServiceSocket, evt: CloseEvent) => {
-            return null;
-        })
-        // .withProtocols([])
-        .build();
+        const socket = this.builder
+            .onOpen((instance: ServiceSocket, evt: Event) => {
+                
+            })
+            .onMessage((instance: ServiceSocket, evt: MessageEvent) => {
+                const message: SocketEvent<ReceiveSyncEvent> = JSON.parse(evt.data ?? {});
+                if (message.message_type === MessageType.SYNC) {
+                    state.set({
+                        ...this.stateDataValidator(state, message.data.state),
+                    });   
+                }
+            })
+            .onError((instance: ServiceSocket, evt: Event) => {
+                return null;
+            })
+            .onClose((instance: ServiceSocket, evt: CloseEvent) => {
+                return null;
+            })
+            .withBuffer(new LRUBuffer(10000))
+            .withBackoff(new LinearBackoff(0, 1000, 10000))
+            .build();
 
         this.socket = socket;
     }
@@ -72,6 +75,27 @@ class StateSyncClient {
         });
     }
 
+    private stateDataValidator(state: State<StateValueAtRoot>, serverState: object): object {
+        const clientState = state.get();
+
+        Object.keys(serverState).forEach(serverKey => {
+            Object.keys(clientState).forEach(clientKey => {
+                if (serverKey.toLowerCase() === 'updated_at' && clientKey.toLowerCase() === 'updated_at') {
+                    const serverDate = new Date(serverState[serverKey]);
+                    const clientDate = new Date(clientState[clientKey]);
+
+                    if (serverDate.getTime() > clientDate.getTime()) {
+                        return serverState;
+                    }
+
+                    return clientState;
+                }
+            });
+        });
+
+        return clientState;
+    }
+
     public sendHTTP(httpType: HTTPType, data: object) {
         const headers = {
             'Content-Type': 'application/json',
@@ -79,6 +103,7 @@ class StateSyncClient {
 
         const payload = this.createSocketMessage(SocketType.SEND, {
             http_over_websocket: true,
+            method: httpType,
             headers: headers,
             body: data,
         });
