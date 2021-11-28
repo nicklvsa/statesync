@@ -7,6 +7,8 @@ export interface ReceiveSyncEvent {
     state: object;
 }
 
+export interface StateSyncConfig {}
+
 export interface SocketEvent<T> {
     transfer_type: SocketType,
     message_type: MessageType,
