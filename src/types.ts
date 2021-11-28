@@ -1,6 +1,7 @@
 import { Plugin } from '@hookstate/core';
 
 export type StateSyncPluginType = (() => Plugin) | null;
+export type Nullable<T> = T | null;
 
 export interface ReceiveSyncEvent {
     state: object;

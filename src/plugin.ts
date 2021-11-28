@@ -7,7 +7,7 @@ import {
 } 
 from '@hookstate/core';
 
-import { StateSyncPluginType } from './types';
+import { Nullable, StateSyncPluginType } from './types';
 import StateSyncClient from './sync';
 
 /**
@@ -22,9 +22,13 @@ import StateSyncClient from './sync';
 
 const StateSyncPluginID = Symbol('StateSyncPlugin');
 
-export const StateSync = (endpoint: string): StateSyncPluginType => {
+export const StateSync = (endpoint: string, config?: Nullable<object>): StateSyncPluginType => {
     if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
         return null;
+    }
+
+    if (config) {
+        // do some configuration stuff
     }
 
     return () => ({
