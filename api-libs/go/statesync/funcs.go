@@ -3,18 +3,23 @@ package statesync
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
 func NewStateSync() *StateSync {
-	return &StateSync{
+	sync := StateSync{
 		isInitialized: true,
 		Clients:       make(map[*SocketClient]bool),
 		Create:        make(chan *SocketClient),
 		Destroy:       make(chan *SocketClient),
 	}
+
+	go sync.Run()
+	return &sync
 }
 
 func (s *StateSync) Run() {
@@ -26,6 +31,42 @@ func (s *StateSync) Run() {
 			s.DestroyClient(client)
 		}
 	}
+}
+
+func (s *StateSync) Connect(writer http.ResponseWriter, request *http.Request, readSize, writeSize *int, origins []string) {
+	if readSize == nil {
+		readSize = GetPointerToInt(1024)
+	}
+
+	if writeSize == nil {
+		writeSize = GetPointerToInt(1024)
+	}
+
+	upgrader := websocket.Upgrader{
+		ReadBufferSize: *readSize,
+		WriteBufferSize: *writeSize,
+	}
+
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		if len(origins) == 0 {
+			return true
+		}
+		
+		for _, origin := range origins {
+			if origin == r.Header.Get("Origin") {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	conn, err := upgrader.Upgrade(writer, request, nil)
+	if err != nil {
+		log.Fatalf("[ERR] - %s\n", err.Error())
+	}
+
+	s.RegisterConnection(conn)
 }
 
 func (s *StateSync) CreateClient(client *SocketClient) {

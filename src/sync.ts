@@ -118,7 +118,7 @@ class StateSyncClient {
  
     private buildWSURL(): string {
         const schema = this.endpoint.startsWith('https://') ? 'wss://' : 'ws://';
-        return `${schema}${this.endpoint}/sync`;
+        return `${schema}${this.endpoint.split('://')[1]}/sync`;
     }
 }
 
