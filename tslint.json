@@ -29,7 +29,7 @@
         "member-ordering": [
             true
         ],
-        "no-any": true,
+        "no-any": false,
         "no-arg": true,
         "no-bitwise": true,
         "no-console": [

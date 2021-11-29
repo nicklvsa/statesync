@@ -15,18 +15,21 @@ import {
     Nullable,
     StateSyncClientConfig
 } from './types';
+import { PubSub } from './pubsub';
 
 class StateSyncClient {
-    private endpoint!: string;
-    private builder!: WebsocketBuilder;
+    private pubsub: PubSub<object>;
+    private endpoint: string;
+    private builder: WebsocketBuilder;
     private socket!: ServiceSocket;
     private config!: StateSyncClientConfig;
 
-    constructor(endpoint: string, config?: Nullable<StateSyncClientConfig>) {
+    constructor(endpoint: string, pubsub: PubSub<object>, config?: Nullable<StateSyncClientConfig>) {
         if (config) {
             this.config = config;
         }
 
+        this.pubsub = pubsub;
         this.endpoint = endpoint;
         this.builder = new WebsocketBuilder(this.buildWSURL());
     }
@@ -43,14 +46,26 @@ class StateSyncClient {
         let socket!: ServiceSocket;
         const handlers = this.builder
             .onOpen((instance: ServiceSocket, evt: Event) => {
-                // connection opened; woo
+                this.pubsub.pub({
+                    message: 'connection opened'
+                });
             })
             .onMessage((instance: ServiceSocket, evt: MessageEvent) => {
                 const message: SocketEvent<ReceiveSyncEvent> = JSON.parse(evt.data ?? {});
-                if (message.message_type === MessageType.SYNC) {
-                    state.set({
-                        ...this.stateDataValidator(state, message.data.state),
-                    });   
+                switch (message.message_type) {
+                    case MessageType.SYNC:
+                        state.set({
+                            ...this.stateDataValidator(state, message.data.state),
+                        }); 
+                        break;
+                    case MessageType.HTTP:
+                        this.pubsub.pub({
+                            message: 'http response',
+                            data: message.data,
+                        });
+                        break;
+                    default:
+                        break;
                 }
             })
             .onError((instance: ServiceSocket, evt: Event) => {
@@ -94,20 +109,11 @@ class StateSyncClient {
     private stateDataValidator(state: State<StateValueAtRoot>, serverState: object): object {
         const clientState = state.get();
 
-        Object.keys(serverState).forEach(serverKey => {
-            Object.keys(clientState).forEach(clientKey => {
-                if (serverKey.toLowerCase() === 'updated_at' && clientKey.toLowerCase() === 'updated_at') {
-                    const serverDate = new Date(serverState[serverKey]);
-                    const clientDate = new Date(clientState[clientKey]);
-
-                    if (serverDate.getTime() > clientDate.getTime()) {
-                        return serverState;
-                    }
-
-                    return clientState;
-                }
-            });
-        });
+        /**
+         * TODO: actually determine which state is the correct source of truth
+         * (maybe use timestamps to determine which state's data was updated
+         * last?)
+         */
 
         return clientState;
     }
@@ -134,7 +140,19 @@ class StateSyncClient {
  
     private buildWSURL(): string {
         const schema = this.endpoint.startsWith('https://') ? 'wss://' : 'ws://';
-        return `${schema}${this.endpoint.split('://')[1]}/sync`;
+        let url = `${schema}${this.endpoint.split('://')[1]}`;
+
+        if (this.config?.custom_socket_endpoint) {
+            const endpoint = this.config?.custom_socket_endpoint.startsWith('/') 
+                ? this.config?.custom_socket_endpoint.slice(1) 
+                : this.config?.custom_socket_endpoint;
+
+            url = `${url}/${endpoint}`;
+        } else {
+            url = `${url}/sync`;
+        }
+
+        return url;
     }
 }
 

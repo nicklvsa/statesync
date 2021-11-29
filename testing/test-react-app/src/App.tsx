@@ -13,7 +13,11 @@ if (!stateSync) {
 	throw new Error('StateSync is not defined');
 }
 
-globalState.attach(stateSync);
+stateSync.pubsub.sub(data => {
+	console.log(`SUBSCRIBER: ${JSON.stringify(data)}`);
+});
+
+globalState.attach(stateSync.plugin);
 
 const App = () => {
 	const compState = useState(globalState);

@@ -1,19 +1,25 @@
 import { Plugin } from '@hookstate/core';
+import { PubSub } from './pubsub';
 
-export type StateSyncPluginType = (() => Plugin) | null;
 export type Nullable<T> = T | null;
+
+export type StateSyncPluginType<T> = Nullable<{
+    plugin: (() => Plugin),
+    pubsub: PubSub<T>,
+}>;
 
 export interface ReceiveSyncEvent {
     state: object;
 }
 
 export interface StateSyncClientConfig {
-    buffer_size: Nullable<number>;
+    buffer_size?: number;
     backoff_factor: {
-        initial: Nullable<number>;
-        increment: Nullable<number>;
-        max: Nullable<number>;
+        initial?: number;
+        increment?: number;
+        max?: number;
     };
+    custom_socket_endpoint?: string;
 }
 
 export interface StateSyncConfig {}
@@ -30,7 +36,8 @@ export enum SocketType {
 }
 
 export enum MessageType {
-    SYNC = 'SYNC'
+    SYNC = 'SYNC',
+    HTTP = 'HTTP'
 }
 
 export enum HTTPType {

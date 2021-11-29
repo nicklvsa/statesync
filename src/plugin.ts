@@ -9,6 +9,7 @@ from '@hookstate/core';
 
 import { Nullable, StateSyncConfig, StateSyncPluginType } from './types';
 import StateSyncClient from './sync';
+import { PubSub } from './pubsub';
 
 /**
  * State Sync Plugin
@@ -21,8 +22,9 @@ import StateSyncClient from './sync';
  */
 
 const StateSyncPluginID = Symbol('StateSyncPlugin');
+const pubsub = new PubSub<object>();
 
-export const StateSync = (endpoint: string, config?: Nullable<StateSyncConfig>): StateSyncPluginType => {
+export const StateSync = (endpoint: string, config?: Nullable<StateSyncConfig>): StateSyncPluginType<object> => {
     if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
         return null;
     }
@@ -31,20 +33,23 @@ export const StateSync = (endpoint: string, config?: Nullable<StateSyncConfig>):
         // do some configuration stuff
     }
 
-    return () => ({
-        id: StateSyncPluginID,
-        init: (s: State<StateValueAtRoot>) => {
-            const builder = new StateSyncClient(endpoint);
-            const socket = builder.getSocket(s);
+    return {
+        plugin:  () => ({
+            id: StateSyncPluginID,
+            init: (s: State<StateValueAtRoot>) => {
+                const builder = new StateSyncClient(endpoint, pubsub);
+                const socket = builder.getSocket(s);
 
-            return {
-                onSet: (data: PluginCallbacksOnSetArgument) => {
-                    builder.sendState(data);
-                },
-                onDestroy: (data: PluginCallbacksOnDestroyArgument) => {
-                    socket.close();
-                }
-            } as PluginCallbacks;
-        }
-    });
+                return {
+                    onSet: (data: PluginCallbacksOnSetArgument) => {
+                        builder.sendState(data);
+                    },
+                    onDestroy: (data: PluginCallbacksOnDestroyArgument) => {
+                        socket.close();
+                    }
+                } as PluginCallbacks;
+            }
+        }),
+        pubsub: pubsub,
+    }
 };
