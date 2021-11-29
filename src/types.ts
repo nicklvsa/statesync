@@ -7,6 +7,15 @@ export interface ReceiveSyncEvent {
     state: object;
 }
 
+export interface StateSyncClientConfig {
+    buffer_size: Nullable<number>;
+    backoff_factor: {
+        initial: Nullable<number>;
+        increment: Nullable<number>;
+        max: Nullable<number>;
+    };
+}
+
 export interface StateSyncConfig {}
 
 export interface SocketEvent<T> {

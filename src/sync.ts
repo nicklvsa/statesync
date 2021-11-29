@@ -11,15 +11,22 @@ import {
     SocketEvent, 
     ReceiveSyncEvent, 
     HTTPType, 
-    MessageType
+    MessageType,
+    Nullable,
+    StateSyncClientConfig
 } from './types';
 
 class StateSyncClient {
     private endpoint!: string;
     private builder!: WebsocketBuilder;
     private socket!: ServiceSocket;
+    private config!: StateSyncClientConfig;
 
-    constructor(endpoint: string) {
+    constructor(endpoint: string, config?: Nullable<StateSyncClientConfig>) {
+        if (config) {
+            this.config = config;
+        }
+
         this.endpoint = endpoint;
         this.builder = new WebsocketBuilder(this.buildWSURL());
     }
@@ -33,9 +40,10 @@ class StateSyncClient {
     }
 
     public setupSync(state: State<StateValueAtRoot>) {
-        const socket = this.builder
+        let socket!: ServiceSocket;
+        const handlers = this.builder
             .onOpen((instance: ServiceSocket, evt: Event) => {
-                
+                // connection opened; woo
             })
             .onMessage((instance: ServiceSocket, evt: MessageEvent) => {
                 const message: SocketEvent<ReceiveSyncEvent> = JSON.parse(evt.data ?? {});
@@ -50,10 +58,18 @@ class StateSyncClient {
             })
             .onClose((instance: ServiceSocket, evt: CloseEvent) => {
                 return null;
-            })
-            .withBuffer(new LRUBuffer(10000))
-            .withBackoff(new LinearBackoff(0, 1000, 10000))
-            .build();
+            });
+            
+        if (this.config) {
+            const {initial, increment, max} = this.config.backoff_factor;
+            const backoff = new LinearBackoff(initial ?? 0, increment ?? 1000, max ?? 10000);
+            socket = handlers
+                .withBuffer(new LRUBuffer(this.config.buffer_size ?? 10000))
+                .withBackoff(backoff)
+                .build();
+        } else {
+            socket = handlers.build();
+        }
 
         this.socket = socket;
     }
