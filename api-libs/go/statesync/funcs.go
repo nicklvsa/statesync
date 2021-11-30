@@ -82,7 +82,53 @@ func (s *StateSync) CreateClient(client *SocketClient) {
 	}
 }
 
+func (s *StateSync) BroadcastAll(current *SocketClient, payload *SocketEvent) error {
+	if payload == nil || payload.Payload == nil {
+		return fmt.Errorf("[ERR] - payload is nil")
+	}
+
+	for client, active := range s.Clients {
+		if active {
+			client.Data <- *payload
+		}
+	}
+
+	return nil
+}
+
+func (s *StateSync) Emit(client *SocketClient, payload *SocketEvent) error {
+	if payload == nil || payload.Payload == nil {
+		return fmt.Errorf("[ERR] - payload is nil")
+	}
+
+	client.Data <- *payload
+
+	return nil
+}
+
 func (s *StateSync) HandleEvent(client *SocketClient, payload *SocketEvent) error {
+	fmt.Printf("Handling Event: %+v\n", *payload)
+	switch payload.Type {
+	case SocketEventTypeSend:
+		// do stuff with state
+		var message State
+		if err := UnmarshalInterface(payload.Payload, &message); err != nil {
+			return err
+		}
+
+		payload := SocketEvent{
+			Type: SocketEventTypeReceive,
+			MessageType: MessageTypeSync,
+			Payload: &SyncMessage{
+				State: &message,
+			},
+		}
+
+		if err := s.Emit(client, &payload); err != nil {	
+			return err
+		}
+	}
+
 	return nil
 }
 

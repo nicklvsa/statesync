@@ -1,15 +1,29 @@
-import { Plugin } from '@hookstate/core';
+import { Plugin, State, StateValueAtRoot } from '@hookstate/core';
 import { PubSub } from './pubsub';
+
+export const DATASYNC_API_MAGIC_KEY = `__datasync_api_response`;
 
 export type Nullable<T> = T | null;
 
 export type StateSyncPluginType<T> = Nullable<{
     plugin: (() => Plugin),
+    wrap: ((data: any) => any),
     pubsub: PubSub<T>,
 }>;
 
 export interface ReceiveSyncEvent {
-    state: object;
+    state: Record<string, any>;
+}
+
+export enum InternalPubSubEventType {
+    INTERNAL_STATE_UPDATE = 'INTERNAL_STATE_UPDATE',
+    GENERIC_UPDATE = 'GENERIC_UPDATE',
+}
+
+export interface InternalPubSubEvent {
+    type: InternalPubSubEventType;
+    message: string;
+    data?: any;
 }
 
 export interface StateSyncClientConfig {
@@ -25,9 +39,9 @@ export interface StateSyncClientConfig {
 export interface StateSyncConfig {}
 
 export interface SocketEvent<T> {
-    transfer_type: SocketType,
+    payload_type: SocketType,
     message_type: MessageType,
-    data: T;
+    payload: T;
 }
 
 export enum SocketType {

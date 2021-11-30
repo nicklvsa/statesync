@@ -13,18 +13,21 @@ import {
     HTTPType, 
     MessageType,
     Nullable,
-    StateSyncClientConfig
+    StateSyncClientConfig,
+    DATASYNC_API_MAGIC_KEY,
+    InternalPubSubEvent,
+    InternalPubSubEventType
 } from './types';
 import { PubSub } from './pubsub';
 
 class StateSyncClient {
-    private pubsub: PubSub<object>;
+    private pubsub: PubSub<InternalPubSubEvent>;
     private endpoint: string;
     private builder: WebsocketBuilder;
     private socket!: ServiceSocket;
     private config!: StateSyncClientConfig;
 
-    constructor(endpoint: string, pubsub: PubSub<object>, config?: Nullable<StateSyncClientConfig>) {
+    constructor(endpoint: string, pubsub: PubSub<InternalPubSubEvent>, config?: Nullable<StateSyncClientConfig>) {
         if (config) {
             this.config = config;
         }
@@ -45,23 +48,30 @@ class StateSyncClient {
     public setupSync(state: State<StateValueAtRoot>) {
         let socket!: ServiceSocket;
         const handlers = this.builder
-            .onOpen((instance: ServiceSocket, evt: Event) => {
+            .onOpen(() => {
                 this.pubsub.pub({
-                    message: 'connection opened'
+                    type: InternalPubSubEventType.GENERIC_UPDATE,
+                    message: 'connection opened',
                 });
             })
             .onMessage((instance: ServiceSocket, evt: MessageEvent) => {
                 const message: SocketEvent<ReceiveSyncEvent> = JSON.parse(evt.data ?? {});
                 switch (message.message_type) {
                     case MessageType.SYNC:
-                        state.set({
-                            ...this.stateDataValidator(state, message.data.state),
-                        }); 
+                        this.pubsub.pub({
+                            type: InternalPubSubEventType.GENERIC_UPDATE,
+                            message: 'sync response',
+                            data: message.payload,
+                        });
+                        
+                        this.handleStateChange(state, message.payload.state);
+
                         break;
                     case MessageType.HTTP:
                         this.pubsub.pub({
+                            type: InternalPubSubEventType.GENERIC_UPDATE,
                             message: 'http response',
-                            data: message.data,
+                            data: message.payload,
                         });
                         break;
                     default:
@@ -91,31 +101,31 @@ class StateSyncClient {
 
     public sendState(currentState: PluginCallbacksOnSetArgument) {
         if ('state' in currentState) {
-            this.socket.send(this.createSocketMessage(SocketType.SEND, currentState));
+            this.socket.send(this.createSocketMessage(SocketType.SEND, currentState.state));
         }
 
         return this.getServerState();
     }
 
-    private createSocketMessage(msgType: SocketType, data: object): string {
+    public handleStateChange(currentState: State<StateValueAtRoot>, serverState: Record<string, any>) {
+        if (currentState && serverState) {
+            const updatedState: Record<string, any> = {
+                ...serverState,
+            };
+
+            updatedState[DATASYNC_API_MAGIC_KEY] = true;
+            currentState.merge(updatedState);
+        }
+    }
+
+    private createSocketMessage(socketType: SocketType, data: object): string {
         return JSON.stringify({
-            message_type: msgType,
-            data: {
+            payload_type: socketType,
+            message_type: MessageType.SYNC,
+            payload: {
                 ...data,
             }
         });
-    }
-
-    private stateDataValidator(state: State<StateValueAtRoot>, serverState: object): object {
-        const clientState = state.get();
-
-        /**
-         * TODO: actually determine which state is the correct source of truth
-         * (maybe use timestamps to determine which state's data was updated
-         * last?)
-         */
-
-        return clientState;
     }
 
     public sendHTTP(httpType: HTTPType, data: object) {

@@ -5,14 +5,22 @@ import "github.com/gorilla/websocket"
 type SocketEventType string
 
 const (
-	SocketEventTypeConnect    SocketEventType = "connect"
-	SocketEventTypeDisconnect SocketEventType = "disconnect"
-	SocketEventTypeJoin       SocketEventType = "receive"
-	SocketEventTypeMove       SocketEventType = "send"
+	SocketEventTypeConnect    SocketEventType = "CONNECT"
+	SocketEventTypeDisconnect SocketEventType = "DISCONNECT"
+	SocketEventTypeReceive      SocketEventType = "RECEIVE"
+	SocketEventTypeSend      SocketEventType = "SEND"
+)
+
+type MessageType string
+
+const (
+	MessageTypeSync MessageType = "SYNC"
+	MessageTypeHTTP MessageType = "HTTP"
 )
 
 type SocketEvent struct {
 	Type SocketEventType `json:"payload_type"`
+	MessageType MessageType `json:"message_type"`
 	Payload interface{} `json:"payload"`
 }
 

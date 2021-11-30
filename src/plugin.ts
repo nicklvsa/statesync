@@ -7,7 +7,13 @@ import {
 } 
 from '@hookstate/core';
 
-import { Nullable, StateSyncConfig, StateSyncPluginType } from './types';
+import { DATASYNC_API_MAGIC_KEY, 
+    InternalPubSubEvent, 
+    InternalPubSubEventType, 
+    Nullable, 
+    StateSyncConfig, 
+    StateSyncPluginType 
+} from './types';
 import StateSyncClient from './sync';
 import { PubSub } from './pubsub';
 
@@ -22,9 +28,11 @@ import { PubSub } from './pubsub';
  */
 
 const StateSyncPluginID = Symbol('StateSyncPlugin');
-const pubsub = new PubSub<object>();
+const pubsub = new PubSub<InternalPubSubEvent>();
 
-export const StateSync = (endpoint: string, config?: Nullable<StateSyncConfig>): StateSyncPluginType<object> => {
+export const StateSync = (endpoint: string, config?: Nullable<StateSyncConfig>): 
+    StateSyncPluginType<InternalPubSubEvent> => {
+
     if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
         return null;
     }
@@ -42,14 +50,24 @@ export const StateSync = (endpoint: string, config?: Nullable<StateSyncConfig>):
 
                 return {
                     onSet: (data: PluginCallbacksOnSetArgument) => {
-                        builder.sendState(data);
+                        if (!data.state[DATASYNC_API_MAGIC_KEY]) {
+                            data.state[DATASYNC_API_MAGIC_KEY] = false;
+                            data.value[DATASYNC_API_MAGIC_KEY] = false;
+                            builder.sendState(data);
+                        }
                     },
                     onDestroy: (data: PluginCallbacksOnDestroyArgument) => {
                         socket.close();
-                    }
+                    },
                 } as PluginCallbacks;
             }
         }),
         pubsub: pubsub,
+        wrap: (data: any) => {
+            return {
+                ...data,
+                [DATASYNC_API_MAGIC_KEY]: false,
+            }
+        },
     }
 };

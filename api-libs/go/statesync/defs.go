@@ -8,3 +8,9 @@ const (
 	SocketWriteTimeout   = 10 * time.Second
 	SocketPingPeriod     = (SocketPingAckTimeout * 9) / 10
 )
+
+type State map[string]interface{}
+
+type SyncMessage struct {
+	State *State `json:"state"`
+}

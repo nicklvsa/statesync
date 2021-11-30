@@ -13,21 +13,17 @@ if (!stateSync) {
 	throw new Error('StateSync is not defined');
 }
 
-stateSync.pubsub.sub(data => {
-	console.log(`SUBSCRIBER: ${JSON.stringify(data)}`);
-});
-
 globalState.attach(stateSync.plugin);
 
 const App = () => {
 	const compState = useState(globalState);
 
 	const firstNameUpdated = (evt: ChangeEvent<HTMLInputElement>) => {
-		compState.set(state => ({...state, first_name: evt.target.value}));
+		compState.set(state => stateSync.wrap({...state, first_name: evt.target.value}));
 	};
 
 	const lastNameUpdated = (evt: ChangeEvent<HTMLInputElement>) => {
-		compState.set(state => ({...state, last_name: evt.target.value}));
+		compState.set(state => stateSync.wrap({...state, last_name: evt.target.value}));
 	};
 
 	return (
