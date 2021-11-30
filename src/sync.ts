@@ -111,9 +111,9 @@ class StateSyncClient {
         if (currentState && serverState) {
             const updatedState: Record<string, any> = {
                 ...serverState,
+                [DATASYNC_API_MAGIC_KEY]: true,
             };
 
-            updatedState[DATASYNC_API_MAGIC_KEY] = true;
             currentState.merge(updatedState);
         }
     }

@@ -1,4 +1,4 @@
-import { Plugin, State, StateValueAtRoot } from '@hookstate/core';
+import { Plugin } from '@hookstate/core';
 import { PubSub } from './pubsub';
 
 export const DATASYNC_API_MAGIC_KEY = `__datasync_api_response`;

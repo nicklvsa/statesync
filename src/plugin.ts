@@ -9,7 +9,6 @@ from '@hookstate/core';
 
 import { DATASYNC_API_MAGIC_KEY, 
     InternalPubSubEvent, 
-    InternalPubSubEventType, 
     Nullable, 
     StateSyncConfig, 
     StateSyncPluginType 
