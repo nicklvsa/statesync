@@ -1,6 +1,9 @@
 package statesync
 
-import "time"
+import (
+	"net/http"
+	"time"
+)
 
 const (
 	SocketMaxMessageSize = 1024
@@ -13,4 +16,17 @@ type State map[string]interface{}
 
 type SyncMessage struct {
 	State *State `json:"state"`
+}
+
+type HTTPResponseMessage struct {
+	RequestID string `json:"request_id"`
+	Data *State `json:"data"`
+}
+
+type HTTPHandler func() http.HandlerFunc
+
+type HTTPDefintion struct {
+	Route string 
+	Method string
+	Handler http.HandlerFunc
 }

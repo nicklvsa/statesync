@@ -8,10 +8,11 @@ export type Nullable<T> = T | null;
 export type StateSyncPluginType<T> = Nullable<{
     plugin: (() => Plugin),
     wrap: ((data: any) => any),
+    sendHTTP: ((httpType: HTTPType, location: string, data: any, cb: (data: any) => void) => void),
     pubsub: PubSub<T>,
 }>;
 
-export interface ReceiveSyncEvent {
+export interface ReceiveEvent {
     state: Record<string, any>;
 }
 
@@ -22,6 +23,7 @@ export enum InternalPubSubEventType {
 
 export interface InternalPubSubEvent {
     type: InternalPubSubEventType;
+    message_type?: MessageType;
     message: string;
     data?: any;
 }

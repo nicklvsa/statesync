@@ -9,7 +9,7 @@ from '@hookstate/core';
 import { 
     SocketType, 
     SocketEvent, 
-    ReceiveSyncEvent, 
+    ReceiveEvent, 
     HTTPType, 
     MessageType,
     Nullable,
@@ -55,12 +55,13 @@ class StateSyncClient {
                 });
             })
             .onMessage((instance: ServiceSocket, evt: MessageEvent) => {
-                const message: SocketEvent<ReceiveSyncEvent> = JSON.parse(evt.data ?? {});
+                const message: SocketEvent<ReceiveEvent> = JSON.parse(evt.data ?? {});
                 switch (message.message_type) {
                     case MessageType.SYNC:
                         this.pubsub.pub({
                             type: InternalPubSubEventType.GENERIC_UPDATE,
                             message: 'sync response',
+                            message_type: message.message_type,
                             data: message.payload,
                         });
                         
@@ -71,6 +72,7 @@ class StateSyncClient {
                         this.pubsub.pub({
                             type: InternalPubSubEventType.GENERIC_UPDATE,
                             message: 'http response',
+                            message_type: message.message_type,
                             data: message.payload,
                         });
                         break;
@@ -101,7 +103,7 @@ class StateSyncClient {
 
     public sendState(currentState: PluginCallbacksOnSetArgument) {
         if ('state' in currentState) {
-            this.socket.send(this.createSocketMessage(SocketType.SEND, currentState.state));
+            this.socket.send(this.createSocketMessage(SocketType.SEND, MessageType.SYNC, currentState.state));
         }
 
         return this.getServerState();
@@ -118,25 +120,27 @@ class StateSyncClient {
         }
     }
 
-    private createSocketMessage(socketType: SocketType, data: object): string {
+    private createSocketMessage(socketType: SocketType, messageType: MessageType,  data: object): string {
         return JSON.stringify({
             payload_type: socketType,
-            message_type: MessageType.SYNC,
+            message_type: messageType,
             payload: {
                 ...data,
             }
         });
     }
 
-    public sendHTTP(httpType: HTTPType, data: object) {
+    public sendHTTP(httpType: HTTPType, location: string, data: object, requestID: string) {
         const headers = {
             'Content-Type': 'application/json',
         };
 
-        const payload = this.createSocketMessage(SocketType.SEND, {
+        const payload = this.createSocketMessage(SocketType.SEND, MessageType.HTTP, {
             http_over_websocket: true,
+            endpoint: location,
             method: httpType,
             headers: headers,
+            request_id: requestID,
             body: data,
         });
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -83,12 +84,22 @@ func (s *StateSync) CreateClient(client *SocketClient) {
 	}
 }
 
+func (s *StateSync) RegisterRoute(endpoint, method string, handler http.HandlerFunc) (string, string, http.HandlerFunc) {
+	REGISTERED_ROUTES[endpoint] = HTTPDefintion{
+		Method: method,
+		Handler: handler,
+		Route: endpoint,
+	}
+
+	return endpoint, method, handler
+}
+
 func (s *StateSync) RegisterCallback(callback StateSyncCallback) func() {
 	ident := xid.New().String()
-	REGISTERD_CALLBACKS[ident] = callback
+	REGISTERED_CALLBACKS[ident] = callback
 
 	return func() {
-		delete(REGISTERD_CALLBACKS, ident)
+		delete(REGISTERED_CALLBACKS, ident)
 	}
 }
 
@@ -126,35 +137,59 @@ func (s *StateSync) HandleEvent(client *SocketClient, payload *SocketEvent) erro
 			return err
 		}
 
-		payload := SocketEvent{
-			Type: SocketEventTypeReceive,
-			MessageType: MessageTypeSync,
-			Payload: &SyncMessage{
-				State: &message,
-			},
-		}
-
-		if err := s.Emit(client, &payload); err != nil {	
-			return err
-		}
-
-		go func() {
-			for _, callback := range REGISTERD_CALLBACKS {
-				callback(message, func(state State) {
-					merged := MergeStates(message, state)
-
-					payload := SocketEvent{
-						Type: SocketEventTypeReceive,
-						MessageType: MessageTypeSync,
-						Payload: &SyncMessage{
-							State: &merged,
-						},
-					}
-
-					s.Emit(client, &payload)
-				})
+		switch payload.MessageType {
+		case MessageTypeSync:
+			payload := SocketEvent{
+				Type: SocketEventTypeReceive,
+				MessageType: MessageTypeSync,
+				Payload: &SyncMessage{
+					State: &message,
+				},
 			}
-		}()
+	
+			if err := s.Emit(client, &payload); err != nil {	
+				return err
+			}
+	
+			go func() {
+				for _, callback := range REGISTERED_CALLBACKS {
+					callback(message, func(state State) {
+						merged := MergeStates(message, state)
+	
+						payload := SocketEvent{
+							Type: SocketEventTypeReceive,
+							MessageType: MessageTypeSync,
+							Payload: &SyncMessage{
+								State: &merged,
+							},
+						}
+	
+						s.Emit(client, &payload)
+					})
+				}
+			}()
+
+			case MessageTypeHTTP:
+				endpoint := message.Get("endpoint").(string)
+				method := message.Get("method").(string)
+
+				payload := SocketEvent{
+					Type: SocketEventTypeReceive,
+					MessageType: MessageTypeHTTP,
+				}
+
+				if handler, ok := REGISTERED_ROUTES[endpoint]; ok {
+					if strings.EqualFold(method, handler.Method) {
+						handler.Handler(BuildHTTPRequest(func(data map[string]interface{}) {
+							payload.Payload = &HTTPResponseMessage{}
+						}))
+					}
+				}
+
+				if err := s.Emit(client, &payload); err != nil {	
+					return err
+				}
+		}
 	}
 
 	return nil
@@ -268,4 +303,16 @@ func (s *StateSync) RegisterReader(client *SocketClient) {
 			fmt.Printf("[ERR] - %s\n", err.Error())
 		}
 	}
+}
+
+func (t *State) Get(name string) interface{} {
+	if field, ok := (*t)[name]; ok {
+		return field
+	}
+
+	return []string{}
+}
+
+func (t *State) GetCompare(name string, eqTo interface{}) bool {
+	return t.Get(name) == eqTo
 }

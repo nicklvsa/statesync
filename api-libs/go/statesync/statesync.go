@@ -1,6 +1,8 @@
 package statesync
 
-import "github.com/gorilla/websocket"
+import (
+	"github.com/gorilla/websocket"
+)
 
 type SocketEventType string
 
@@ -19,7 +21,8 @@ const (
 )
 
 var (
-	REGISTERD_CALLBACKS = map[string]StateSyncCallback{}
+	REGISTERED_CALLBACKS = map[string]StateSyncCallback{}
+	REGISTERED_ROUTES = map[string]HTTPDefintion{}
 )
 
 type SocketEvent struct {
