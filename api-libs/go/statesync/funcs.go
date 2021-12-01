@@ -180,7 +180,15 @@ func (s *StateSync) HandleEvent(client *SocketClient, payload *SocketEvent) erro
 
 				if handler, ok := REGISTERED_ROUTES[endpoint]; ok {
 					if strings.EqualFold(method, handler.Method) {
-						handler.Handler(BuildHTTPRequest(func(data map[string]interface{}) {
+						handler.Handler(BuildHTTPRequest(func(data map[string]interface{}, err error) {
+							if err != nil {
+								payload.Payload = State{
+									"error": err.Error(),
+								}
+
+								return
+							}
+							
 							payload.Payload = &HTTPResponseMessage{}
 						}))
 					}
