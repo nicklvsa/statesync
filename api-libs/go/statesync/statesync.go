@@ -18,6 +18,10 @@ const (
 	MessageTypeHTTP MessageType = "HTTP"
 )
 
+var (
+	REGISTERD_CALLBACKS = map[string]StateSyncCallback{}
+)
+
 type SocketEvent struct {
 	Type SocketEventType `json:"payload_type"`
 	MessageType MessageType `json:"message_type"`
@@ -36,3 +40,5 @@ type StateSync struct {
 	Create        chan *SocketClient
 	Destroy       chan *SocketClient
 }
+
+type StateSyncCallback func(State, func(State))

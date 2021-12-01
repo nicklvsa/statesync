@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/rs/xid"
 )
 
 func NewStateSync() *StateSync {
@@ -82,6 +83,15 @@ func (s *StateSync) CreateClient(client *SocketClient) {
 	}
 }
 
+func (s *StateSync) RegisterCallback(callback StateSyncCallback) func() {
+	ident := xid.New().String()
+	REGISTERD_CALLBACKS[ident] = callback
+
+	return func() {
+		delete(REGISTERD_CALLBACKS, ident)
+	}
+}
+
 func (s *StateSync) BroadcastAll(current *SocketClient, payload *SocketEvent) error {
 	if payload == nil || payload.Payload == nil {
 		return fmt.Errorf("[ERR] - payload is nil")
@@ -127,6 +137,24 @@ func (s *StateSync) HandleEvent(client *SocketClient, payload *SocketEvent) erro
 		if err := s.Emit(client, &payload); err != nil {	
 			return err
 		}
+
+		go func() {
+			for _, callback := range REGISTERD_CALLBACKS {
+				callback(message, func(state State) {
+					merged := MergeStates(message, state)
+
+					payload := SocketEvent{
+						Type: SocketEventTypeReceive,
+						MessageType: MessageTypeSync,
+						Payload: &SyncMessage{
+							State: &merged,
+						},
+					}
+
+					s.Emit(client, &payload)
+				})
+			}
+		}()
 	}
 
 	return nil

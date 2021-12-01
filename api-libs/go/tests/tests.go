@@ -24,5 +24,16 @@ func main() {
 		sync.Connect(c.Writer, c.Request, nil, nil, nil)
 	})
 
+	sync.RegisterCallback(func(state statesync.State, setState func(s statesync.State)) {
+		if first, ok := state["first_name"]; ok {
+			firstName := first.(string)
+			if firstName == "Nick" {
+				setState(statesync.State{
+					"first_name": "Bob",
+				})
+			}
+		}
+	})
+
 	r.Run(":8080")
 }

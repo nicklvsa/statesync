@@ -22,3 +22,15 @@ func UnmarshalInterface(data, intoModel interface{}) error {
 
 	return nil
 }
+
+func MergeStates(states ...State) (s State) {
+	s = make(State)
+	
+	for _, m := range states {
+		for k, v := range m {
+			s[k] = v
+		}
+	}
+
+	return s
+}
