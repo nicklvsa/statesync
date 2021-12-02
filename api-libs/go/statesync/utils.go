@@ -41,9 +41,13 @@ func MergeStates(states ...State) (s State) {
 // TODO: build out http request -> ws response converter
 func BuildHTTPRequest(f func (data map[string]interface{}, err error)) (http.ResponseWriter, *http.Request) {
 	r := http.Request{}
-	var w http.ResponseWriter
-
+	w := WSResponseWriter{}
 	
+	var datas map[string]interface{}
+	if err := json.Unmarshal(w.Data, &datas); err != nil {
+		f(nil, err)
+	}
 
+	f(datas, nil)
 	return w, &r
 }

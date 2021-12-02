@@ -1,6 +1,8 @@
 package statesync
 
 import (
+	"net/http"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -42,6 +44,11 @@ type StateSync struct {
 	Clients       map[*SocketClient]bool
 	Create        chan *SocketClient
 	Destroy       chan *SocketClient
+}
+
+type WSResponseWriter struct {
+	Data []byte
+	Headers http.Header
 }
 
 type StateSyncCallback func(State, func(State))

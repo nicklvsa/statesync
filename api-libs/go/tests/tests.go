@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"statesync-go/statesync"
 	"time"
@@ -12,16 +13,15 @@ func main() {
 	r := gin.Default()
 	sync := statesync.NewStateSync()
 
-	route, method, handler := sync.RegisterRoute("/hello_world", "GET", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("{\"message\": \"Hello World\"}"))
-	})
-	r.Handle(route, method, gin.WrapF(handler))
+	def := sync.RegisterRoute("/hello_world", "GET", func(w http.ResponseWriter, r *http.Request) {
+		data := map[string]interface{}{
+			"response": "Hello World!",
+		}
 
-	// r.GET("/hello_world", func (c *gin.Context) {
-	// 	c.JSON(200, gin.H{
-	// 		"message": "Hello World",
-	// 	})
-	// })
+		out, _ := json.Marshal(data)
+		w.Write(out)
+	})
+	r.Handle(def.Method, def.Route, gin.WrapF(def.Handler))
 
 	unreg := sync.RegisterCallback(func(state statesync.State, update func(s statesync.State)) {
 		if state.GetCompare("first_name", "Nick") {

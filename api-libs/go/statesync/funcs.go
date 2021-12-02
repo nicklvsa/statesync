@@ -84,14 +84,15 @@ func (s *StateSync) CreateClient(client *SocketClient) {
 	}
 }
 
-func (s *StateSync) RegisterRoute(endpoint, method string, handler http.HandlerFunc) (string, string, http.HandlerFunc) {
-	REGISTERED_ROUTES[endpoint] = HTTPDefintion{
+func (s *StateSync) RegisterRoute(endpoint, method string, handler http.HandlerFunc) *HTTPDefintion {
+	def := HTTPDefintion{
 		Method: method,
 		Handler: handler,
 		Route: endpoint,
 	}
 
-	return endpoint, method, handler
+	REGISTERED_ROUTES[endpoint] = def
+	return &def
 }
 
 func (s *StateSync) RegisterCallback(callback StateSyncCallback) func() {
@@ -181,6 +182,8 @@ func (s *StateSync) HandleEvent(client *SocketClient, payload *SocketEvent) erro
 				if handler, ok := REGISTERED_ROUTES[endpoint]; ok {
 					if strings.EqualFold(method, handler.Method) {
 						handler.Handler(BuildHTTPRequest(func(data map[string]interface{}, err error) {
+							fmt.Printf("DATA: %+v\n", err)
+
 							if err != nil {
 								payload.Payload = State{
 									"error": err.Error(),
@@ -189,7 +192,10 @@ func (s *StateSync) HandleEvent(client *SocketClient, payload *SocketEvent) erro
 								return
 							}
 							
-							payload.Payload = &HTTPResponseMessage{}
+							state := State(data)
+							payload.Payload = &HTTPResponseMessage{
+								Data: &state,
+							}
 						}))
 					}
 				}
@@ -323,4 +329,18 @@ func (t *State) Get(name string) interface{} {
 
 func (t *State) GetCompare(name string, eqTo interface{}) bool {
 	return t.Get(name) == eqTo
+}
+
+func (w WSResponseWriter) Header() http.Header {
+	w.Headers.Set("stub", "header_stub")
+	return w.Headers
+}
+
+func (w WSResponseWriter) Write(data []byte) (int, error) {
+	w.Data = data
+	return 0, nil
+}
+
+func (w WSResponseWriter) WriteHeader(code int) {
+	w.Headers.Set("status_code", fmt.Sprint(code))
 }
