@@ -6,9 +6,9 @@ export const DATASYNC_API_MAGIC_KEY = `__datasync_api_response`;
 export type Nullable<T> = T | null;
 
 export type StateSyncPluginType<T> = Nullable<{
-    plugin: (() => Plugin),
-    wrap: ((data: any) => any),
-    sendHTTP: ((httpType: HTTPType, location: string, data: any, cb: (data: any) => void) => void),
+    plugin: () => Plugin,
+    wrap: (data: any) => any,
+    sendHTTP: (httpType: HTTPType, location: string, data: any, cb: (data: any) => void) => void,
     pubsub: PubSub<T>,
 }>;
 
