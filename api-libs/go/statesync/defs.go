@@ -28,5 +28,5 @@ type HTTPHandler func() http.HandlerFunc
 type HTTPDefintion struct {
 	Route string 
 	Method string
-	Handler http.HandlerFunc
+	Handler func(http.ResponseWriter, *http.Request)
 }

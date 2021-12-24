@@ -27,6 +27,10 @@ var (
 	REGISTERED_ROUTES = map[string]HTTPDefintion{}
 )
 
+func makeRoute[T any](def HTTPDefintion) {
+	REGISTERED_ROUTES[def.Route] = def
+}
+
 type SocketEvent struct {
 	Type SocketEventType `json:"payload_type"`
 	MessageType MessageType `json:"message_type"`

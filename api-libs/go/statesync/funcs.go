@@ -84,15 +84,41 @@ func (s *StateSync) CreateClient(client *SocketClient) {
 	}
 }
 
-func (s *StateSync) RegisterRoute(endpoint, method string, handler http.HandlerFunc) *HTTPDefintion {
-	def := HTTPDefintion{
-		Method: method,
-		Handler: handler,
-		Route: endpoint,
-	}
+// func (s *StateSync) RegisterRoute_deprecated(endpoint, method string, handler http.HandlerFunc) *HTTPDefintion {
+// 	def := HTTPDefintion{
+// 		Method: method,
+// 		Handler: handler,
+// 		Route: endpoint,
+// 	}
 
-	REGISTERED_ROUTES[endpoint] = def
-	return &def
+// 	REGISTERED_ROUTES[endpoint] = def
+// 	return &def
+// }
+
+func RegisterRoute[HandlerT any, RetT any, LibT interface{Handle(string, string, ...HandlerT) RetT}](lib LibT, endpoint, method string, handler HandlerT) {
+	handlerWrapper := func(inputHandler HandlerT) http.HandlerFunc {
+		// elem := reflect.ValueOf(inputHandler)
+		// fmt.Printf("ELEM: %+v\n", )
+		// for i := 0; i < elem.NumField(); i++ {
+		// 	varName := elem.Type().Field(i).Name
+		// 	varType := elem.Type().Field(i).Type
+		// 	varValue := elem.Field(i).Interface()
+		// 	fmt.Printf("%v %v %v\n", varName,varType,varValue)
+		// }
+
+		return func(w http.ResponseWriter, r *http.Request) {
+			// TODO: handle transformations.
+			
+		}
+	}
+	
+	makeRoute[HandlerT](HTTPDefintion{
+		Method: method,
+		Route: endpoint,
+		Handler: handlerWrapper(handler),
+	})
+
+	lib.Handle(method, endpoint, handler)
 }
 
 func (s *StateSync) RegisterCallback(callback StateSyncCallback) func() {
@@ -327,8 +353,24 @@ func (t *State) Get(name string) interface{} {
 	return []string{}
 }
 
+func (t *State) GetStr(name string) string {
+	if value, ok := t.Get(name).(string); ok {
+		return value
+	}
+
+	return ""
+}
+
 func (t *State) GetCompare(name string, eqTo interface{}) bool {
 	return t.Get(name) == eqTo
+}
+
+func (t *State) GetContains(name string, substr string) bool {
+	if value, ok := t.Get(name).(string); ok {
+		return strings.Contains(value, substr)
+	}
+
+	return false
 }
 
 func (w WSResponseWriter) Header() http.Header {
