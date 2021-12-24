@@ -7,17 +7,15 @@ import {
 } 
 from '@hookstate/core';
 
-import { DATASYNC_API_MAGIC_KEY, 
-    HTTPType, 
+import { 
+    DATASYNC_API_MAGIC_KEY, 
     InternalPubSubEvent, 
-    MessageType, 
     Nullable, 
     StateSyncConfig, 
     StateSyncPluginType 
 } from './types';
 import StateSyncClient from './sync';
 import { PubSub } from './pubsub';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * State Sync Plugin
@@ -70,21 +68,6 @@ export const StateSync = (endpoint: string, config?: Nullable<StateSyncConfig>):
                 ...data,
                 [DATASYNC_API_MAGIC_KEY]: false,
             }
-        },
-        sendHTTP: (httpType: HTTPType, location: string, data?: any, cb?: (data: any) => void) => {
-            const reqID = uuidv4();
-
-            const subscription = pubsub.sub(event => {   
-                if (event.message_type === MessageType.HTTP) {
-                    if (cb && event.data?.request_id === reqID) {
-                        cb(event.data);
-                    }
-                }
-
-                subscription.unsub();
-            });
-
-            builder.sendHTTP(httpType, location, data, reqID);
-        },
+        }
     }
 };

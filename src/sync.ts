@@ -10,7 +10,6 @@ import {
     SocketType, 
     SocketEvent, 
     ReceiveEvent, 
-    HTTPType, 
     MessageType,
     Nullable,
     StateSyncClientConfig,
@@ -68,14 +67,6 @@ class StateSyncClient {
                         this.handleStateChange(state, message.payload.state);
 
                         break;
-                    case MessageType.HTTP:
-                        this.pubsub.pub({
-                            type: InternalPubSubEventType.GENERIC_UPDATE,
-                            message: 'http response',
-                            message_type: message.message_type,
-                            data: message.payload,
-                        });
-                        break;
                     default:
                         break;
                 }
@@ -128,24 +119,6 @@ class StateSyncClient {
                 ...data,
             }
         });
-    }
-
-    public sendHTTP(httpType: HTTPType, location: string, data: object, requestID: string) {
-        const headers = {
-            'Content-Type': 'application/json',
-        };
-
-        const payload = this.createSocketMessage(SocketType.SEND, MessageType.HTTP, {
-            http_over_websocket: true,
-            endpoint: location,
-            method: httpType,
-            headers: headers,
-            request_id: requestID,
-            body: data,
-        });
-
-        // TODO: figure out way to receive response from websocket stream directly after calling send
-        this.socket.send(payload);
     }
 
     public getServerState(): object {

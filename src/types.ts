@@ -8,7 +8,6 @@ export type Nullable<T> = T | null;
 export type StateSyncPluginType<T> = Nullable<{
     plugin: () => Plugin,
     wrap: (data: any) => any,
-    sendHTTP: (httpType: HTTPType, location: string, data: any, cb: (data: any) => void) => void,
     pubsub: PubSub<T>,
 }>;
 
@@ -53,12 +52,4 @@ export enum SocketType {
 
 export enum MessageType {
     SYNC = 'SYNC',
-    HTTP = 'HTTP'
-}
-
-export enum HTTPType {
-    POST = 'POST',
-    PUT = 'PUT',
-    GET = 'GET',
-    DELETE = 'DELETE',
 }
