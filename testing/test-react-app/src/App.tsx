@@ -38,8 +38,8 @@ const App = () => {
 				}
 			</div>
 			<h1>Test App</h1>
-			<input className="text-field" type="text" placeholder="First Name" onChange={firstNameUpdated}/><br/>
-			<input className="text-field" type="text" placeholder="Last Name" onChange={lastNameUpdated}/><br/><br/>
+			<input value={compState.get().first_name} className="text-field" type="text" placeholder="First Name" onChange={firstNameUpdated}/><br/>
+			<input value={compState.get().last_name} className="text-field" type="text" placeholder="Last Name" onChange={lastNameUpdated}/><br/><br/>
 		</div>
 	)
 };

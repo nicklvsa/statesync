@@ -84,26 +84,7 @@ func (s *StateSync) CreateClient(client *SocketClient) {
 	}
 }
 
-func RegisterRoute[HandlerT any, RetT any, LibT interface {
-	Handle(string, string, ...HandlerT) RetT
-}](lib LibT, endpoint, method string, handler HandlerT) {
-	handlerWrapper := func(inputHandler HandlerT) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			// TODO: handle transformations.
-
-		}
-	}
-
-	makeRoute[HandlerT](HTTPDefintion{
-		Method:  method,
-		Route:   endpoint,
-		Handler: handlerWrapper(handler),
-	})
-
-	lib.Handle(method, endpoint, handler)
-}
-
-func (s *StateSync) RegisterCallback(callback StateSyncCallback) func() {
+func (s *StateSync) Callback(callback StateSyncCallback) func() {
 	ident := xid.New().String()
 	REGISTERED_CALLBACKS[ident] = callback
 
@@ -163,54 +144,20 @@ func (s *StateSync) HandleEvent(client *SocketClient, payload *SocketEvent) erro
 			go func() {
 				for _, callback := range REGISTERED_CALLBACKS {
 					callback(message, func(state State) {
-						merged := MergeStates(message, state)
+						if merged, ok := MergeStates(message, state); ok {
+							payload := SocketEvent{
+								Type:        SocketEventTypeReceive,
+								MessageType: MessageTypeSync,
+								Payload: &SyncMessage{
+									State: merged,
+								},
+							}
 
-						payload := SocketEvent{
-							Type:        SocketEventTypeReceive,
-							MessageType: MessageTypeSync,
-							Payload: &SyncMessage{
-								State: &merged,
-							},
+							s.Emit(client, &payload)
 						}
-
-						s.Emit(client, &payload)
 					})
 				}
 			}()
-
-		case MessageTypeHTTP:
-			endpoint := message.Get("endpoint").(string)
-			method := message.Get("method").(string)
-
-			payload := SocketEvent{
-				Type:        SocketEventTypeReceive,
-				MessageType: MessageTypeHTTP,
-			}
-
-			if handler, ok := REGISTERED_ROUTES[endpoint]; ok {
-				if strings.EqualFold(method, handler.Method) {
-					handler.Handler(BuildHTTPRequest(func(data map[string]interface{}, err error) {
-						fmt.Printf("DATA: %+v\n", err)
-
-						if err != nil {
-							payload.Payload = State{
-								"error": err.Error(),
-							}
-
-							return
-						}
-
-						state := State(data)
-						payload.Payload = &HTTPResponseMessage{
-							Data: &state,
-						}
-					}))
-				}
-			}
-
-			if err := s.Emit(client, &payload); err != nil {
-				return err
-			}
 		}
 	}
 
@@ -332,7 +279,7 @@ func (t *State) Get(name string) interface{} {
 		return field
 	}
 
-	return []string{}
+	return nil
 }
 
 func (t *State) GetStr(name string) string {
@@ -341,6 +288,13 @@ func (t *State) GetStr(name string) string {
 	}
 
 	return ""
+}
+
+func (t *State) Replacer(name, search, replace string, update func(State)) {
+	value := t.GetStr(name)
+	update(State{
+		name: strings.ReplaceAll(value, search, replace),
+	})
 }
 
 func (t *State) GetCompare(name string, eqTo interface{}) bool {
