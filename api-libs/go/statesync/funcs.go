@@ -45,7 +45,7 @@ func (s *StateSync) Connect(writer http.ResponseWriter, request *http.Request, r
 	}
 
 	upgrader := websocket.Upgrader{
-		ReadBufferSize: *readSize,
+		ReadBufferSize:  *readSize,
 		WriteBufferSize: *writeSize,
 	}
 
@@ -53,7 +53,7 @@ func (s *StateSync) Connect(writer http.ResponseWriter, request *http.Request, r
 		if len(origins) == 0 {
 			return true
 		}
-		
+
 		for _, origin := range origins {
 			if origin == r.Header.Get("Origin") {
 				return true
@@ -75,7 +75,7 @@ func (s *StateSync) CreateClient(client *SocketClient) {
 	s.Clients[client] = true
 
 	event := SocketEvent{
-		Type: SocketEventTypeConnect,
+		Type:    SocketEventTypeConnect,
 		Payload: nil,
 	}
 
@@ -84,44 +84,7 @@ func (s *StateSync) CreateClient(client *SocketClient) {
 	}
 }
 
-// func (s *StateSync) RegisterRoute_deprecated(endpoint, method string, handler http.HandlerFunc) *HTTPDefintion {
-// 	def := HTTPDefintion{
-// 		Method: method,
-// 		Handler: handler,
-// 		Route: endpoint,
-// 	}
-
-// 	REGISTERED_ROUTES[endpoint] = def
-// 	return &def
-// }
-
-func RegisterRoute[HandlerT any, RetT any, LibT interface{Handle(string, string, ...HandlerT) RetT}](lib LibT, endpoint, method string, handler HandlerT) {
-	handlerWrapper := func(inputHandler HandlerT) http.HandlerFunc {
-		// elem := reflect.ValueOf(inputHandler)
-		// fmt.Printf("ELEM: %+v\n", )
-		// for i := 0; i < elem.NumField(); i++ {
-		// 	varName := elem.Type().Field(i).Name
-		// 	varType := elem.Type().Field(i).Type
-		// 	varValue := elem.Field(i).Interface()
-		// 	fmt.Printf("%v %v %v\n", varName,varType,varValue)
-		// }
-
-		return func(w http.ResponseWriter, r *http.Request) {
-			// TODO: handle transformations.
-			
-		}
-	}
-	
-	makeRoute[HandlerT](HTTPDefintion{
-		Method: method,
-		Route: endpoint,
-		Handler: handlerWrapper(handler),
-	})
-
-	lib.Handle(method, endpoint, handler)
-}
-
-func (s *StateSync) RegisterCallback(callback StateSyncCallback) func() {
+func (s *StateSync) Callback(callback StateSyncCallback) func() {
 	ident := xid.New().String()
 	REGISTERED_CALLBACKS[ident] = callback
 
@@ -167,68 +130,34 @@ func (s *StateSync) HandleEvent(client *SocketClient, payload *SocketEvent) erro
 		switch payload.MessageType {
 		case MessageTypeSync:
 			payload := SocketEvent{
-				Type: SocketEventTypeReceive,
+				Type:        SocketEventTypeReceive,
 				MessageType: MessageTypeSync,
 				Payload: &SyncMessage{
 					State: &message,
 				},
 			}
-	
-			if err := s.Emit(client, &payload); err != nil {	
+
+			if err := s.Emit(client, &payload); err != nil {
 				return err
 			}
-	
+
 			go func() {
 				for _, callback := range REGISTERED_CALLBACKS {
 					callback(message, func(state State) {
-						merged := MergeStates(message, state)
-	
-						payload := SocketEvent{
-							Type: SocketEventTypeReceive,
-							MessageType: MessageTypeSync,
-							Payload: &SyncMessage{
-								State: &merged,
-							},
+						if merged, ok := MergeStates(message, state); ok {
+							payload := SocketEvent{
+								Type:        SocketEventTypeReceive,
+								MessageType: MessageTypeSync,
+								Payload: &SyncMessage{
+									State: merged,
+								},
+							}
+
+							s.Emit(client, &payload)
 						}
-	
-						s.Emit(client, &payload)
 					})
 				}
 			}()
-
-			case MessageTypeHTTP:
-				endpoint := message.Get("endpoint").(string)
-				method := message.Get("method").(string)
-
-				payload := SocketEvent{
-					Type: SocketEventTypeReceive,
-					MessageType: MessageTypeHTTP,
-				}
-
-				if handler, ok := REGISTERED_ROUTES[endpoint]; ok {
-					if strings.EqualFold(method, handler.Method) {
-						handler.Handler(BuildHTTPRequest(func(data map[string]interface{}, err error) {
-							fmt.Printf("DATA: %+v\n", err)
-
-							if err != nil {
-								payload.Payload = State{
-									"error": err.Error(),
-								}
-
-								return
-							}
-							
-							state := State(data)
-							payload.Payload = &HTTPResponseMessage{
-								Data: &state,
-							}
-						}))
-					}
-				}
-
-				if err := s.Emit(client, &payload); err != nil {	
-					return err
-				}
 		}
 	}
 
@@ -252,9 +181,9 @@ func (s *StateSync) DestroyClient(client *SocketClient) error {
 func (s *StateSync) RegisterConnection(conn *websocket.Conn) {
 	if s.isInitialized {
 		client := SocketClient{
-			Core: s,
+			Core:       s,
 			Connection: conn,
-			Data: make(chan SocketEvent),
+			Data:       make(chan SocketEvent),
 		}
 
 		go s.RegisterWriter(&client)
@@ -350,7 +279,7 @@ func (t *State) Get(name string) interface{} {
 		return field
 	}
 
-	return []string{}
+	return nil
 }
 
 func (t *State) GetStr(name string) string {
@@ -359,6 +288,13 @@ func (t *State) GetStr(name string) string {
 	}
 
 	return ""
+}
+
+func (t *State) Replacer(name, search, replace string, update func(State)) {
+	value := t.GetStr(name)
+	update(State{
+		name: strings.ReplaceAll(value, search, replace),
+	})
 }
 
 func (t *State) GetCompare(name string, eqTo interface{}) bool {

@@ -2,7 +2,6 @@ import './App.css';
 import { createState, useState } from '@hookstate/core';
 import { ChangeEvent } from 'react';
 import { StateSync } from './syncstate-src/index';
-import { HTTPType } from './syncstate-src/types';
 
 const globalState = createState({
 	first_name: '',
@@ -27,12 +26,6 @@ const App = () => {
 		compState.set(state => stateSync.wrap({...state, last_name: evt.target.value}));
 	};
 
-	const exampleHttpViaSocket = () => {
-		stateSync.sendHTTP(HTTPType.GET, '/hello_world', {}, (response) => {
-			console.log(response);
-		});
-	};
-
 	return (
 		<div className="mid-centered">
 			<div>
@@ -45,9 +38,8 @@ const App = () => {
 				}
 			</div>
 			<h1>Test App</h1>
-			<input className="text-field" type="text" placeholder="First Name" onChange={firstNameUpdated}/><br/>
-			<input className="text-field" type="text" placeholder="Last Name" onChange={lastNameUpdated}/><br/><br/>
-			<button onClick={exampleHttpViaSocket}>Rest request of ws</button>
+			<input value={compState.get().first_name} className="text-field" type="text" placeholder="First Name" onChange={firstNameUpdated}/><br/>
+			<input value={compState.get().last_name} className="text-field" type="text" placeholder="Last Name" onChange={lastNameUpdated}/><br/><br/>
 		</div>
 	)
 };

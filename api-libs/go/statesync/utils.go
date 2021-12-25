@@ -2,7 +2,8 @@ package statesync
 
 import (
 	"encoding/json"
-	"net/http"
+
+	"github.com/r3labs/diff/v2"
 )
 
 func GetPointerToInt(num int) *int {
@@ -26,28 +27,19 @@ func UnmarshalInterface(data, intoModel interface{}) error {
 	return nil
 }
 
-func MergeStates(states ...State) (s State) {
-	s = make(State)
+func MergeStates(orig, updated State) (*State, bool) {
+	changelog, err := diff.Diff(orig, updated)
+	if err != nil {
+		return nil, false
+	}
 
-	for _, m := range states {
-		for k, v := range m {
-			s[k] = v
+	for _, change := range changelog {
+		if change.From != change.To && change.To != nil {
+			for _, path := range change.Path {
+				orig[path] = change.To
+			}
 		}
 	}
 
-	return s
-}
-
-// TODO: build out http request -> ws response converter
-func BuildHTTPRequest(f func (data map[string]interface{}, err error)) (http.ResponseWriter, *http.Request) {
-	r := http.Request{}
-	w := WSResponseWriter{}
-	
-	var datas map[string]interface{}
-	if err := json.Unmarshal(w.Data, &datas); err != nil {
-		f(nil, err)
-	}
-
-	f(datas, nil)
-	return w, &r
+	return &orig, true
 }
