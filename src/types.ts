@@ -18,6 +18,7 @@ export interface ReceiveEvent {
 export enum InternalPubSubEventType {
     INTERNAL_STATE_UPDATE = 'INTERNAL_STATE_UPDATE',
     GENERIC_UPDATE = 'GENERIC_UPDATE',
+    ERROR = 'ERROR'
 }
 
 export interface InternalPubSubEvent {

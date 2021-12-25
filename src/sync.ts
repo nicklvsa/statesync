@@ -65,14 +65,20 @@ class StateSyncClient {
                         });
                         
                         this.handleStateChange(state, message.payload.state);
-
                         break;
                     default:
                         break;
                 }
             })
             .onError((instance: ServiceSocket, evt: Event) => {
-                return null;
+                this.pubsub.pub({
+                    type: InternalPubSubEventType.ERROR,
+                    message: 'error',
+                    data: {
+                        event: evt,
+                        state: instance.underlyingWebsocket?.readyState,
+                    },
+                });
             })
             .onClose((instance: ServiceSocket, evt: CloseEvent) => {
                 return null;

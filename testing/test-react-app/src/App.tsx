@@ -13,17 +13,18 @@ if (!stateSync) {
 	throw new Error('StateSync is not defined');
 }
 
+const wrap = stateSync.wrap;
 globalState.attach(stateSync.plugin);
 
 const App = () => {
 	const compState = useState(globalState);
 
 	const firstNameUpdated = (evt: ChangeEvent<HTMLInputElement>) => {
-		compState.set(state => stateSync.wrap({...state, first_name: evt.target.value}));
+		compState.set(s => wrap({...s, first_name: evt.target.value}));
 	};
 
 	const lastNameUpdated = (evt: ChangeEvent<HTMLInputElement>) => {
-		compState.set(state => stateSync.wrap({...state, last_name: evt.target.value}));
+		compState.set(s => wrap({...s, last_name: evt.target.value}));
 	};
 
 	return (
@@ -38,8 +39,19 @@ const App = () => {
 				}
 			</div>
 			<h1>Test App</h1>
-			<input value={compState.get().first_name} className="text-field" type="text" placeholder="First Name" onChange={firstNameUpdated}/><br/>
-			<input value={compState.get().last_name} className="text-field" type="text" placeholder="Last Name" onChange={lastNameUpdated}/><br/><br/>
+			<input 
+				value={compState.get().first_name} 
+				className="text-field" type="text" 
+				placeholder="First Name" 
+				onChange={firstNameUpdated}
+			/><br/>
+			<input 
+				value={compState.get().last_name} 
+				className="text-field" 
+				type="text" 
+				placeholder="Last Name" 
+				onChange={lastNameUpdated}
+			/><br/><br/>
 		</div>
 	)
 };

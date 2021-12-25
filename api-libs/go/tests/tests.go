@@ -11,15 +11,7 @@ func main() {
 	r := gin.Default()
 	sync := statesync.NewStateSync()
 
-	unreg0 := sync.Callback(func(state statesync.State, update func(s statesync.State)) {
-		if state.GetCompare("first_name", "Nick") {
-			update(statesync.State{
-				"first_name": "Bob",
-			})
-		}
-	})
-
-	sync.Callback(func(state statesync.State, update func(s statesync.State)) {
+	cancel := sync.Callback(func(state statesync.State, update func(s statesync.State)) {
 		state.Replacer("first_name", "hello", "bye", update)
 	})
 
@@ -30,7 +22,7 @@ func main() {
 		sync.Connect(c.Writer, c.Request, nil, nil, nil)
 	})
 
-	time.AfterFunc(time.Second*30, unreg0)
+	time.AfterFunc(time.Second*30, cancel)
 
 	r.Run(":8080")
 }
