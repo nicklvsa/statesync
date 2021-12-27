@@ -44,7 +44,7 @@ class StateSyncClient {
         return this.socket;
     }
 
-    public setupSync(state: State<StateValueAtRoot>) {
+    public setupSync(state: State<StateValueAtRoot>): void {
         let socket!: ServiceSocket;
         const handlers = this.builder
             .onOpen(() => {
@@ -98,12 +98,10 @@ class StateSyncClient {
         this.socket = socket;
     }
 
-    public sendState(currentState: PluginCallbacksOnSetArgument) {
+    public sendState(currentState: PluginCallbacksOnSetArgument): void {
         if ('state' in currentState) {
             this.socket.send(this.createSocketMessage(SocketType.SEND, MessageType.SYNC, currentState.state));
         }
-
-        return this.getServerState();
     }
 
     public handleStateChange(currentState: State<StateValueAtRoot>, serverState: Record<string, any>) {
@@ -125,10 +123,6 @@ class StateSyncClient {
                 ...data,
             }
         });
-    }
-
-    public getServerState(): object {
-       return JSON.parse('{}');
     }
  
     private buildWSURL(): string {
