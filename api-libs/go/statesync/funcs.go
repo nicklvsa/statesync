@@ -3,7 +3,6 @@ package statesync
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -65,7 +64,7 @@ func (s *StateSync) Connect(writer http.ResponseWriter, request *http.Request, r
 
 	conn, err := upgrader.Upgrade(writer, request, nil)
 	if err != nil {
-		log.Fatalf("[ERR] - %s\n", err.Error())
+		Fatal(err)
 	}
 
 	s.RegisterConnection(conn)
@@ -80,7 +79,7 @@ func (s *StateSync) CreateClient(client *SocketClient) {
 	}
 
 	if err := s.HandleEvent(client, &event); err != nil {
-		fmt.Printf("[ERR] - %s\n", err.Error())
+		Info(err)
 	}
 }
 
@@ -118,7 +117,7 @@ func (s *StateSync) Emit(client *SocketClient, payload *SocketEvent) error {
 }
 
 func (s *StateSync) HandleEvent(client *SocketClient, payload *SocketEvent) error {
-	fmt.Printf("Handling Event: %+v\n", *payload)
+	Info(*payload)
 	switch payload.Type {
 	case SocketEventTypeSend:
 		// do stuff with state
@@ -257,7 +256,7 @@ func (s *StateSync) RegisterReader(client *SocketClient) {
 		_, payload, err := client.Connection.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				fmt.Printf("[ERR] - %s\n", err.Error())
+				Err(err)
 			}
 
 			break
@@ -265,11 +264,11 @@ func (s *StateSync) RegisterReader(client *SocketClient) {
 
 		var event SocketEvent
 		if err := json.Unmarshal(payload, &event); err != nil {
-			fmt.Printf("[ERR] - %s\n", err.Error())
+			Err(err)
 		}
 
 		if s.HandleEvent(client, &event); err != nil {
-			fmt.Printf("[ERR] - %s\n", err.Error())
+			Err(err)
 		}
 	}
 }

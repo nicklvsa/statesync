@@ -15,14 +15,14 @@ func main() {
 		state.Replacer("first_name", "hello", "bye", update)
 	})
 
+	time.AfterFunc(time.Second*30, cancel)
+
 	// sync.Connect will work with any http handler (just pass in the writer and request)
 	// optionally, we can also specify the websocket's read and write sizes as well as
 	// the trusted origins <- this is recommended
 	r.Any("/sync", func(c *gin.Context) {
 		sync.Connect(c.Writer, c.Request, nil, nil, nil)
 	})
-
-	time.AfterFunc(time.Second*30, cancel)
 
 	r.Run(":8080")
 }
