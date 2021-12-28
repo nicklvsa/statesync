@@ -1,4 +1,5 @@
 import WebSocket from 'ws';
+import { Socket } from 'net';
 import { Express, Request } from 'express';
 import { v4 as uuid } from 'uuid';
 import {
@@ -31,7 +32,7 @@ const connect = async (express: Express, usesPath: string = '/sync'): Promise<We
     });
 
     // TODO: fix this
-    express.on('upgrade', (request, socket, head) => {
+    express.on('upgrade', (request: Request, socket: Socket, head: any) => {
         server.handleUpgrade(request, socket, head, (ws: WebSocket) => {
             server.emit('connection', ws, request);
         });
