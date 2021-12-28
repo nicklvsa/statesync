@@ -32,7 +32,7 @@ const connect = async (express: Express, usesPath: string = '/sync'): Promise<We
     });
 
     // TODO: fix this
-    express.on('upgrade', (request: Request, socket: Socket, head: any) => {
+    express.on('upgrade', (request: Request, socket: Socket, head: Buffer) => {
         server.handleUpgrade(request, socket, head, (ws: WebSocket) => {
             server.emit('connection', ws, request);
         });
