@@ -3,3 +3,4 @@ node_modules/
 yarn.lock
 build/
 syncstate-src/
+api-libs/node/dist/
