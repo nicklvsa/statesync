@@ -10,7 +10,7 @@ export enum MessageType {
 };
 
 export interface SocketEvent {
-    type: SocketEventType;
+    payload_type: SocketEventType;
     message_type: MessageType;
     payload: any;
 };

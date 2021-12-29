@@ -8,7 +8,7 @@ const globalState = createState({
 	last_name: '',
 });
 
-const stateSync = StateSync('http://localhost:8080');
+const stateSync = StateSync('http://localhost:9090');
 if (!stateSync) {
 	throw new Error('StateSync is not defined');
 }

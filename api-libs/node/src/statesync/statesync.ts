@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
-import { Socket } from 'net';
-import { Express, Request } from 'express';
+import { Socket, Server } from 'net';
+import { Request } from 'express';
 import { v4 as uuid } from 'uuid';
 import {
     MessageType,
@@ -25,13 +25,19 @@ const callback = (cb: StateSyncCallback): StateSyncCancelable => {
     };
 };
 
-const connect = async (express: Express, usesPath: string = '/sync'): Promise<WebSocket.Server> => {
+const replacer = (current: State, name: string, search: string, replace: string, update: (s: State) => void) => {
+    const value = current[name] as string;
+    update({
+        name: value.split(search).join(replace),
+    });
+};
+
+const connect = async (express: Server, usesPath: string = '/sync'): Promise<WebSocket.Server> => {
     const server = new WebSocket.Server({
         noServer: true,
         path: usesPath,
     });
 
-    // TODO: fix this
     express.on('upgrade', (request: Request, socket: Socket, head: Buffer) => {
         server.handleUpgrade(request, socket, head, (ws: WebSocket) => {
             server.emit('connection', ws, request);
@@ -39,20 +45,21 @@ const connect = async (express: Express, usesPath: string = '/sync'): Promise<We
     });
 
     server.on('connection', (ws: WebSocket, request: Request) => {
-        server.on('message', async (message: any) => {
+        ws.on('message', async (message: any) => {
+            console.log(`HANDLING PAYLOAD: ${message}`);
             try {
                 const parsed = JSON.parse(message) as SocketEvent;
-                switch (parsed.type) {
+                switch (parsed.payload_type) {
                     case SocketEventType.Send:
                         const state = parsed.payload as State;
                         const payload: SocketEvent = {
-                            type: SocketEventType.Receive,
+                            payload_type: SocketEventType.Receive,
                             message_type: MessageType.Sync,
                             payload: {state} as SyncMessage,
                         };
 
                         const handleCallbacks = async () => {
-                            Object.entries(REGISTERD_CALLBACKS).forEach(([_, cb]) => {
+                            Object.entries(REGISTERD_CALLBACKS).forEach(([id, cb]) => {
                                 cb(state, (s: State) => {
                                     const merged = {
                                         ...state,
@@ -60,11 +67,12 @@ const connect = async (express: Express, usesPath: string = '/sync'): Promise<We
                                     };
 
                                     const cbPayload: SocketEvent = {
-                                        type: SocketEventType.Receive,
+                                        payload_type: SocketEventType.Receive,
                                         message_type: MessageType.Sync,
                                         payload: {state: merged} as SyncMessage,
                                     };
 
+                                    console.log(`SENDING MERGED PAYLOADD: ${JSON.stringify(cbPayload)}`);
                                     ws.send(JSON.stringify(cbPayload));
                                 });
                             });
@@ -86,5 +94,6 @@ const connect = async (express: Express, usesPath: string = '/sync'): Promise<We
 
 export {
     connect,
-
+    callback,
+    replacer
 }
