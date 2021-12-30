@@ -16,7 +16,7 @@ export interface SocketEvent {
 };
 
 export interface SyncMessage {
-    state: State;
+    state: StateT;
 }
 
 export type Nullable<T> = T | null;

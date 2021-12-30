@@ -13,24 +13,18 @@ import {
     SyncMessage
 } from './types';
 
-const REGISTERD_CALLBACKS: Record<string, StateSyncCallback> = {};
+const REGISTERED_CALLBACKS: Record<string, StateSyncCallback> = {};
 
 const callback = (cb: StateSyncCallback): StateSyncCancelable => {
     const ident = uuid();
-    REGISTERD_CALLBACKS[ident] = cb;
+    REGISTERED_CALLBACKS[ident] = cb;
 
     return () => {
-        if (REGISTERD_CALLBACKS[ident]) {
-            delete REGISTERD_CALLBACKS[ident];
+        if (REGISTERED_CALLBACKS[ident]) {
+            delete REGISTERED_CALLBACKS[ident];
         }
     };
 };
-
-const stateback = () => {
-    return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
-        console.log(target);
-    }
-}
 
 const connect = async (express: Server, usesPath: string = '/sync'): Promise<WebSocket.Server> => {
     const server = new WebSocket.Server({
@@ -62,7 +56,7 @@ const connect = async (express: Server, usesPath: string = '/sync'): Promise<Web
                         };
 
                         const handleCallbacks = async () => {
-                            Object.entries(REGISTERD_CALLBACKS).forEach(([id, cb]) => {
+                            Object.entries(REGISTERED_CALLBACKS).forEach(([id, cb]) => {
                                 cb(state, (s: State) => {
                                     const merged = {
                                         ...state.raw(),
@@ -97,5 +91,4 @@ const connect = async (express: Server, usesPath: string = '/sync'): Promise<Web
 export {
     connect,
     callback,
-    stateback,
 }

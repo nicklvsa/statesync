@@ -17,7 +17,7 @@ callback((current: State, update: (s: State) => void) => {
 });
 
 callback((current: State, update: (s: State) => void) => {
-    current.replacer('first_name', 'hello', 'bye', update);
+    current.replacer('last_name', 'bye', 'hello', update);
 });
 
 connect(server);
