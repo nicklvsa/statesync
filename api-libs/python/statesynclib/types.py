@@ -5,6 +5,7 @@ StateT = Dict[str, Any]
 
 StateSyncCallback = Callable[[StateT, Callable[[StateT], NoReturn]], NoReturn]
 
+StateSyncCancelable = Callable[[None], NoReturn]
 
 class SocketEventType(enum.Enum):
     Connect = 'CONNECT',
