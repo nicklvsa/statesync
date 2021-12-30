@@ -9,6 +9,7 @@ import {
     State,
     StateSyncCallback,
     StateSyncCancelable,
+    StateT,
     SyncMessage
 } from './types';
 
@@ -25,12 +26,11 @@ const callback = (cb: StateSyncCallback): StateSyncCancelable => {
     };
 };
 
-const replacer = (current: State, name: string, search: string, replace: string, update: (s: State) => void) => {
-    const value = current[name] as string;
-    update({
-        name: value.split(search).join(replace),
-    });
-};
+const stateback = () => {
+    return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+        console.log(target);
+    }
+}
 
 const connect = async (express: Server, usesPath: string = '/sync'): Promise<WebSocket.Server> => {
     const server = new WebSocket.Server({
@@ -51,19 +51,22 @@ const connect = async (express: Server, usesPath: string = '/sync'): Promise<Web
                 const parsed = JSON.parse(message) as SocketEvent;
                 switch (parsed.payload_type) {
                     case SocketEventType.Send:
-                        const state = parsed.payload as State;
+                        const state = new State(parsed.payload as StateT);
+
                         const payload: SocketEvent = {
                             payload_type: SocketEventType.Receive,
                             message_type: MessageType.Sync,
-                            payload: {state} as SyncMessage,
+                            payload: {
+                                state: state.raw(),
+                            } as SyncMessage,
                         };
 
                         const handleCallbacks = async () => {
                             Object.entries(REGISTERD_CALLBACKS).forEach(([id, cb]) => {
                                 cb(state, (s: State) => {
                                     const merged = {
-                                        ...state,
-                                        ...s,
+                                        ...state.raw(),
+                                        ...(s instanceof State ? s.raw() : s),
                                     };
 
                                     const cbPayload: SocketEvent = {
@@ -72,7 +75,6 @@ const connect = async (express: Server, usesPath: string = '/sync'): Promise<Web
                                         payload: {state: merged} as SyncMessage,
                                     };
 
-                                    console.log(`SENDING MERGED PAYLOADD: ${JSON.stringify(cbPayload)}`);
                                     ws.send(JSON.stringify(cbPayload));
                                 });
                             });
@@ -95,5 +97,5 @@ const connect = async (express: Server, usesPath: string = '/sync'): Promise<Web
 export {
     connect,
     callback,
-    replacer
+    stateback,
 }

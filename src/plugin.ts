@@ -3,7 +3,6 @@ import {
     State, 
     PluginCallbacks, 
     PluginCallbacksOnSetArgument,
-    PluginCallbacksOnDestroyArgument
 } 
 from '@hookstate/core';
 
@@ -56,18 +55,18 @@ export const StateSync = (endpoint: string, config?: Nullable<StateSyncConfig>):
                             builder.sendState(data);
                         }
                     },
-                    onDestroy: (data: PluginCallbacksOnDestroyArgument) => {
+                    onDestroy: () => {
                         socket.close();
                     },
                 } as PluginCallbacks;
             }
         }),
-        pubsub: pubsub,
         wrap: (data: any) => {
             return {
                 ...data,
                 [DATASYNC_API_MAGIC_KEY]: false,
             }
-        }
+        },
+        pubsub: pubsub,
     }
 };

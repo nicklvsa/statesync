@@ -11,8 +11,8 @@ func main() {
 	r := gin.Default()
 	sync := statesync.NewStateSync()
 
-	cancel := sync.Callback(func(state statesync.State, update func(s statesync.State)) {
-		state.Replacer("first_name", "hello", "bye", update)
+	cancel := sync.Callback(func(current statesync.State, update func(s statesync.State)) {
+		current.Replacer("first_name", "hello", "bye", update)
 	})
 
 	time.AfterFunc(time.Second*30, cancel)
