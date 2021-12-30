@@ -1,4 +1,7 @@
 from typing import Any, Dict, NoReturn
+from starlette.types import Receive, Scope, Send
+from starlette.websockets import WebSocket
+import websockets
 import uuid
 
 from statesynclib.types import StateSyncCallback, StateSyncCancelable
@@ -17,4 +20,12 @@ def callback(cb: StateSyncCallback) -> StateSyncCancelable:
     return cancel
 
 
-def connect(): pass
+def handle_events(data: Any):
+    print(data)
+
+
+async def connect(scope: Scope, receive: Receive, send: Send):
+    socket = WebSocket(scope, receive, send)
+    await socket.accept()
+    
+    handle_events(await socket.receive_json())

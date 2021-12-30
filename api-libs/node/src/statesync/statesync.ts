@@ -26,13 +26,13 @@ const callback = (cb: StateSyncCallback): StateSyncCancelable => {
     };
 };
 
-const connect = async (express: Server, usesPath: string = '/sync'): Promise<WebSocket.Server> => {
+const connect = async (httpServer: Server, usesPath: string = '/sync'): Promise<WebSocket.Server> => {
     const server = new WebSocket.Server({
         noServer: true,
         path: usesPath,
     });
 
-    express.on('upgrade', (request: Request, socket: Socket, head: Buffer) => {
+    httpServer.on('upgrade', (request: Request, socket: Socket, head: Buffer) => {
         server.handleUpgrade(request, socket, head, (ws: WebSocket) => {
             server.emit('connection', ws, request);
         });
