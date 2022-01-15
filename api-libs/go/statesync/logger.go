@@ -5,19 +5,21 @@ import (
 	"os"
 )
 
-func Info[T any](input T) {
+type T interface{}
+
+func Info(input T) {
 	fmt.Printf("[INFO] - %+v\n", input)
 }
 
-func Warn[T any](input T) {
+func Warn(input T) {
 	fmt.Printf("[WARNING] - %+v\n", input)
 }
 
-func Err[T any](input T) {
+func Err(input T) {
 	fmt.Printf("[ERROR] - %+v\n", input)
 }
 
-func Fatal[T any](input T) {
+func Fatal(input T) {
 	fmt.Printf("[FATAL] - %+v\n", input)
 	os.Exit(0)
 }

@@ -8,7 +8,7 @@ const globalState = createState({
 	last_name: '',
 });
 
-const stateSync = StateSync('http://localhost:9090');
+const stateSync = StateSync('http://localhost:8080');
 if (!stateSync) {
 	throw new Error('StateSync is not defined');
 }
@@ -25,6 +25,10 @@ const App = () => {
 
 	const lastNameUpdated = (evt: ChangeEvent<HTMLInputElement>) => {
 		compState.set(s => wrap({...s, last_name: evt.target.value}));
+	};
+
+	const triggerState = () => {
+		stateSync.trigger(compState.get());
 	};
 
 	return (
@@ -52,6 +56,7 @@ const App = () => {
 				placeholder="Last Name" 
 				onChange={lastNameUpdated}
 			/><br/><br/>
+			<button onClick={triggerState}>Trigger state</button>
 		</div>
 	)
 };

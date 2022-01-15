@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build-macos": "tsc && mkdir -p ./testing/test-react-app/src/syncstate-src && cp -R ./src/ ./testing/test-react-app/src/syncstate-src",
+    "build-macos": "tsc && mkdir -p ./testing/test-react-app/src/syncstate-src && cp -R ./src/* ./testing/test-react-app/src/syncstate-src",
     "build-win": "tsc && xcopy /s /d /y /i .\\src .\\testing\\test-react-app\\src\\syncstate-src"
   },
   "dependencies": {

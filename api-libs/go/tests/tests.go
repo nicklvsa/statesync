@@ -2,7 +2,6 @@ package main
 
 import (
 	"statesync-go/statesync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,11 +10,11 @@ func main() {
 	r := gin.Default()
 	sync := statesync.NewStateSync()
 
-	cancel := sync.Callback(func(current statesync.State, update func(s statesync.State)) {
+	sync.Callback(func(current statesync.State, update func(s statesync.State)) {
 		current.Replacer("first_name", "hello", "bye", update)
 	})
 
-	time.AfterFunc(time.Second*30, cancel)
+	// time.AfterFunc(time.Second*30, cancel)
 
 	// sync.Connect will work with any http handler (just pass in the writer and request)
 	// optionally, we can also specify the websocket's read and write sizes as well as

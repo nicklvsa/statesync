@@ -8,6 +8,7 @@ export type Nullable<T> = T | null;
 export type StateSyncPluginType<T> = Nullable<{
     plugin: () => Plugin,
     wrap: (data: any) => any,
+    trigger: (data: any) => void,
     pubsub: PubSub<T>,
 }>;
 

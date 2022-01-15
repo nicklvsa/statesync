@@ -98,10 +98,8 @@ class StateSyncClient {
         this.socket = socket;
     }
 
-    public sendState(currentState: PluginCallbacksOnSetArgument): void {
-        if ('state' in currentState) {
-            this.socket.send(this.createSocketMessage(SocketType.SEND, MessageType.SYNC, currentState.state));
-        }
+    public sendState(currentState: any): void {
+        this.socket.send(this.createSocketMessage(SocketType.SEND, MessageType.SYNC, currentState));
     }
 
     public handleStateChange(currentState: State<StateValueAtRoot>, serverState: Record<string, any>) {

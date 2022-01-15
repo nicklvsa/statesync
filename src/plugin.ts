@@ -3,6 +3,7 @@ import {
     State, 
     PluginCallbacks, 
     PluginCallbacksOnSetArgument,
+    StateValueAtPath,
 } 
 from '@hookstate/core';
 
@@ -52,7 +53,7 @@ export const StateSync = (endpoint: string, config?: Nullable<StateSyncConfig>):
                         if (!data.state[DATASYNC_API_MAGIC_KEY]) {
                             data.state[DATASYNC_API_MAGIC_KEY] = false;
                             data.value[DATASYNC_API_MAGIC_KEY] = false;
-                            builder.sendState(data);
+                            builder.sendState(data?.state);
                         }
                     },
                     onDestroy: () => {
@@ -61,6 +62,9 @@ export const StateSync = (endpoint: string, config?: Nullable<StateSyncConfig>):
                 } as PluginCallbacks;
             }
         }),
+        trigger: (data: any) => {
+            builder.sendState(data);
+        },
         wrap: (data: any) => {
             return {
                 ...data,

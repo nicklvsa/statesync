@@ -307,17 +307,3 @@ func (t *State) GetContains(name string, substr string) bool {
 
 	return false
 }
-
-func (w WSResponseWriter) Header() http.Header {
-	w.Headers.Set("stub", "header_stub")
-	return w.Headers
-}
-
-func (w WSResponseWriter) Write(data []byte) (int, error) {
-	w.Data = data
-	return 0, nil
-}
-
-func (w WSResponseWriter) WriteHeader(code int) {
-	w.Headers.Set("status_code", fmt.Sprint(code))
-}
