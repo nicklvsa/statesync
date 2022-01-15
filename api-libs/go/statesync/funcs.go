@@ -13,6 +13,7 @@ import (
 
 func NewStateSync() *StateSync {
 	sync := StateSync{
+		isConnected:   false,
 		isInitialized: true,
 		Clients:       make(map[*SocketClient]bool),
 		Create:        make(chan *SocketClient),
@@ -68,6 +69,7 @@ func (s *StateSync) Connect(writer http.ResponseWriter, request *http.Request, r
 	}
 
 	s.RegisterConnection(conn)
+	s.isConnected = true
 }
 
 func (s *StateSync) CreateClient(client *SocketClient) {
@@ -92,7 +94,24 @@ func (s *StateSync) Callback(callback StateSyncCallback) func() {
 	}
 }
 
-func (s *StateSync) BroadcastAll(current *SocketClient, payload *SocketEvent) error {
+func (s *StateSync) SendState(state State) error {
+	payload := SocketEvent{
+		Type:        SocketEventTypeReceive,
+		MessageType: MessageTypeSync,
+		Payload: &SyncMessage{
+			State: &state,
+		},
+	}
+
+	if !s.isInitialized || !s.isConnected {
+		QUEUED_PAYLOADS = append(QUEUED_PAYLOADS, &payload)
+		return nil
+	}
+
+	return s.BroadcastAll(&payload)
+}
+
+func (s *StateSync) BroadcastAll(payload *SocketEvent) error {
 	if payload == nil || payload.Payload == nil {
 		return fmt.Errorf("[ERR] - payload is nil")
 	}
@@ -159,6 +178,12 @@ func (s *StateSync) HandleEvent(client *SocketClient, payload *SocketEvent) erro
 			}()
 		}
 	}
+
+	go func() {
+		for _, payload := range QUEUED_PAYLOADS {
+			s.Emit(client, payload)
+		}
+	}()
 
 	return nil
 }

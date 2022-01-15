@@ -23,6 +23,7 @@ const (
 
 var (
 	REGISTERED_CALLBACKS = map[string]StateSyncCallback{}
+	QUEUED_PAYLOADS      = []*SocketEvent{}
 )
 
 type SocketEvent struct {
@@ -38,6 +39,7 @@ type SocketClient struct {
 }
 
 type StateSync struct {
+	isConnected   bool
 	isInitialized bool
 	Clients       map[*SocketClient]bool
 	Create        chan *SocketClient

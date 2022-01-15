@@ -14,6 +14,10 @@ func main() {
 		current.Replacer("first_name", "hello", "bye", update)
 	})
 
+	sync.SendState(statesync.State{
+		"first_name": "Nick",
+	})
+
 	// time.AfterFunc(time.Second*30, cancel)
 
 	// sync.Connect will work with any http handler (just pass in the writer and request)

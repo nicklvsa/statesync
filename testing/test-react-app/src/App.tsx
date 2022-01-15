@@ -1,34 +1,22 @@
 import './App.css';
-import { createState, useState } from '@hookstate/core';
+import { useState } from '@hookstate/core';
 import { ChangeEvent } from 'react';
-import { StateSync } from './syncstate-src/index';
 
-const globalState = createState({
-	first_name: '',
-	last_name: '',
-});
-
-const stateSync = StateSync('http://localhost:8080');
-if (!stateSync) {
-	throw new Error('StateSync is not defined');
-}
-
-const wrap = stateSync.wrap;
-globalState.attach(stateSync.plugin);
+import { 
+	globalState, 
+	stateSync as sync
+} from './state';
+import ManualTriggerComp from './examples/ManualTrigger';
 
 const App = () => {
 	const compState = useState(globalState);
 
 	const firstNameUpdated = (evt: ChangeEvent<HTMLInputElement>) => {
-		compState.set(s => wrap({...s, first_name: evt.target.value}));
+		compState.set(s => sync?.wrap({...s, first_name: evt.target.value}));
 	};
 
 	const lastNameUpdated = (evt: ChangeEvent<HTMLInputElement>) => {
-		compState.set(s => wrap({...s, last_name: evt.target.value}));
-	};
-
-	const triggerState = () => {
-		stateSync.trigger(compState.get());
+		compState.set(s => sync?.wrap({...s, last_name: evt.target.value}));
 	};
 
 	return (
@@ -56,7 +44,7 @@ const App = () => {
 				placeholder="Last Name" 
 				onChange={lastNameUpdated}
 			/><br/><br/>
-			<button onClick={triggerState}>Trigger state</button>
+			<ManualTriggerComp />
 		</div>
 	)
 };
