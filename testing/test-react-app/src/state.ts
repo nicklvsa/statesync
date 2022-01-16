@@ -4,6 +4,7 @@ import { StateSync } from './syncstate-src/index';
 const globalState = createState({
 	first_name: '',
 	last_name: '',
+    status: '',
 });
 
 const stateSync = StateSync('http://localhost:8080');

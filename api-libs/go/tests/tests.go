@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"statesync-go/statesync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,9 +16,13 @@ func main() {
 		current.Replacer("first_name", "hello", "bye", update)
 	})
 
-	sync.SendState(statesync.State{
-		"first_name": "Nick",
-	})
+	go func() {
+		for x := range time.Tick(5 * time.Second) {
+			sync.SendState(statesync.State{
+				"status": fmt.Sprintf("new status %d", x.Second()),
+			})
+		}
+	}()
 
 	// time.AfterFunc(time.Second*30, cancel)
 

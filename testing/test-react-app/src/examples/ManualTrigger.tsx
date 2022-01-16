@@ -15,6 +15,7 @@ const ManualTriggerComp = () => {
 
     return (
         <div>
+            <h4>Status: {localState.get().status}</h4><br/>
             <button onClick={triggerState}>Trigger state</button>
         </div>
     )
