@@ -1,0 +1,9 @@
+2022-07-30T22:26:26.489  WARN --- [   Thread-10] hypercorn.error            : ASGI Framework Lifespan error, continuing without Lifespan support
+2022-07-30T22:26:26.489  WARN --- [   Thread-10] hypercorn.error            : ASGI Framework Lifespan error, continuing without Lifespan support
+2022-07-30T22:26:26.492  INFO --- [   Thread-10] hypercorn.error            : Running on https://0.0.0.0:4566 (CTRL + C to quit)
+2022-07-30T22:26:26.492  INFO --- [   Thread-10] hypercorn.error            : Running on https://0.0.0.0:4566 (CTRL + C to quit)
+2022-07-30T22:26:26.842  INFO --- [  MainThread] localstack.services.infra  : Starting mock Lambda service on http port 4566 ...
+2022-07-30T22:26:27.389  INFO --- [  MainThread] localstack.utils.bootstrap : Execution of "require" took 785.85ms
+2022-07-30T22:26:27.423  INFO --- [   Thread-20] l.services.motoserver      : starting moto server on http://0.0.0.0:36659
+2022-07-30T22:26:27.425  INFO --- [  MainThread] localstack.services.infra  : Starting mock S3 service on http port 4566 ...
+2022-07-30T22:26:27.516  INFO --- [  MainThread] localstack.utils.bootstrap : Execution of "preload_services" took 957.96ms

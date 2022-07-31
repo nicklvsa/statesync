@@ -39,6 +39,7 @@ type SocketClient struct {
 }
 
 type StateSync struct {
+	redis         *StateSyncRedisClient
 	isConnected   bool
 	isInitialized bool
 	Clients       map[*SocketClient]bool

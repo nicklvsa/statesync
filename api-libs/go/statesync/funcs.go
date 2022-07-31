@@ -12,7 +12,10 @@ import (
 )
 
 func NewStateSync() *StateSync {
+	redisClient := NewRedisClient(nil, "redis")
+
 	sync := StateSync{
+		redis:         redisClient,
 		isConnected:   false,
 		isInitialized: true,
 		Clients:       make(map[*SocketClient]bool),
@@ -25,12 +28,29 @@ func NewStateSync() *StateSync {
 }
 
 func (s *StateSync) Run() {
+	pubsub, err := s.redis.Subscribe("task_message")
+	if err != nil {
+		Fatal("Unable to make redis subscription")
+	}
+
 	for {
 		select {
 		case client := <-s.Create:
 			s.CreateClient(client)
 		case client := <-s.Destroy:
 			s.DestroyClient(client)
+		case client := <-pubsub.Channel():
+			var redisPayload RedisClientPayload
+
+			if err := json.Unmarshal([]byte(client.Payload), &redisPayload); err != nil {
+				Err("Unable to decode redis payload")
+			}
+
+			if redisPayload.ID != s.redis.ID {
+				if err := s.BroadcastAll(redisPayload.Data); err != nil {
+					Err("Unable to broadcast redis payload")
+				}
+			}
 		}
 	}
 }
@@ -129,6 +149,11 @@ func (s *StateSync) Emit(client *SocketClient, payload *SocketEvent) error {
 	if payload == nil || payload.Payload == nil {
 		return fmt.Errorf("[ERR] - payload is nil")
 	}
+
+	s.redis.Publish("task_message", &RedisClientPayload{
+		ID:   s.redis.ID,
+		Data: payload,
+	})
 
 	client.Data <- *payload
 

@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  statesync:
+    build:
+      context: .
+      dockerfile: Dockerfile-statesync
+      target: dev
+    depends_on: 
+      - localstack
+      - redis
+    working_dir: /go/statesync
+    networks:
+      - statesync
+    volumes:
+      - ./:/go/statesync
+    ports:
+      - 8080:8080
+    command: /go/statesync/scripts/wait-all.sh
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:4510-4559:4510-4559"
+    networks:
+      - statesync
+    environment:
+      - EAGER_SERVICE_LOADING=1
+      - SERVICES=lambda,s3
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+  redis:
+    build:
+      context: .
+      args:
+        redis_version: '6.2.1'
+    networks:
+      - statesync
+    environment:
+      IP: ${REDIS_CLUSTER_IP}
+      STANDALONE: ${REDIS_USE_STANDALONE}
+      SENTINEL: 'true'
+    hostname: server
+    ports:
+      - '7000-7050:7000-7050'
+      - '5000-5010:5000-5010'
+
+networks:
+  statesync:
+      name: statesync

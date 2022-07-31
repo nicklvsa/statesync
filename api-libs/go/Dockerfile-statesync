@@ -1,0 +1,41 @@
+FROM golang:1.14 as dev
+
+WORKDIR /go/statesync
+
+COPY . .
+
+RUN go get ./...
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=1m --timeout=30s --start-period=1m --retries=3 \
+  CMD curl -f http://localhost:8080/general/healthcheck || exit 1
+
+CMD ["go", "run", "/go/statesync/tests/tests.go"]
+
+
+
+
+FROM golang:1.14 as build
+
+WORKDIR /go/statesync
+
+COPY . .
+
+COPY --from=dev /go/statesync .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -a .
+
+
+
+
+FROM golang:1.14-alpine as prod
+
+COPY --from=build /go/statesync /statesync
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=1m --timeout=30s --start-period=1m --retries=3 \
+  CMD curl -f http://localhost:8080/general/healthcheck || exit 1
+
+ENTRYPOINT ["/statesync"]
